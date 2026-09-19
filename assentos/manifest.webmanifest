@@ -1,6 +1,6 @@
 {
-  "name": "Assentos",
-  "short_name": "Assentos",
+  "name": "Meu Assento",
+  "short_name": "Meu Assento",
   "description": "Reserva de assentos pastorais da Cabana Church",
   "start_url": "./",
   "scope": "./",
