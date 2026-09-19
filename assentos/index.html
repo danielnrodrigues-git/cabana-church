@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Assentos</title>
+  <meta name="application-name" content="Assentos">
+  <meta name="apple-mobile-web-app-title" content="Assentos">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#1EAEB9">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png">
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;background:#f5f7f8;color:#172033;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;display:grid;place-items:center;padding:24px}
+    .card{width:min(520px,100%);background:#fff;border-radius:24px;padding:30px;box-shadow:0 12px 40px rgba(0,0,0,.09);text-align:center}
+    .logo{width:116px;height:116px;border-radius:24px;display:block;margin:0 auto 18px}
+    h1{font-size:28px;margin:0 0 8px}.desc{margin:0 0 24px;color:#66727a;line-height:1.5}
+    .btn{display:block;width:100%;border:0;border-radius:14px;padding:15px 18px;font-size:17px;font-weight:700;text-decoration:none;cursor:pointer}
+    .primary{background:#1EAEB9;color:white}.help{margin-top:24px;padding:18px;background:#f4f8f9;border-radius:16px;text-align:left}
+    .help strong{display:block;margin-bottom:8px}.help p{margin:7px 0;color:#4f5b63;line-height:1.45}.small{font-size:13px;color:#7a858c;margin-top:18px}
+  </style>
+</head>
+<body>
+  <main class="card">
+    <img class="logo" src="./icon-192.png" alt="Cabana Church">
+    <h1>Assentos</h1>
+    <p class="desc">Reserva de assentos pastorais da Cabana Church.</p>
+    <a class="btn primary" id="openApp" href="https://script.google.com/macros/s/AKfycbz8fVcEVqiyRuLEBR0azx_uwTbg4VCZ1L8We64bdUStF12p3JqtVLnlvs9_96wurES5/exec">Abrir Assentos</a>
+    <section class="help" id="installHelp">
+      <strong>Adicionar à tela inicial</strong>
+      <p><b>iPhone:</b> abra esta página no Safari → Compartilhar → Adicionar à Tela de Início.</p>
+      <p><b>Android:</b> abra no Chrome → menu ⋮ → Adicionar à tela inicial / Instalar app.</p>
+      <p>O ícone será o logo da Cabana e o nome exibido será <b>Assentos</b>.</p>
+    </section>
+    <div class="small">Cabana Church</div>
+  </main>
+  <script>
+    (function(){
+      var appUrl="https://script.google.com/macros/s/AKfycbz8fVcEVqiyRuLEBR0azx_uwTbg4VCZ1L8We64bdUStF12p3JqtVLnlvs9_96wurES5/exec";
+      var standalone=(window.matchMedia&&window.matchMedia("(display-mode: standalone)").matches)||window.navigator.standalone===true;
+      if(standalone){ window.location.replace(appUrl); }
+    })();
+  </script>
+</body>
+</html>
