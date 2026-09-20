@@ -1,8 +1,9 @@
 {
+  "id": "./",
   "name": "Meu Assento",
   "short_name": "Meu Assento",
   "description": "Reserva de assentos pastorais da Cabana Church",
-  "start_url": "./",
+  "start_url": "./app/",
   "scope": "./",
   "display": "standalone",
   "background_color": "#1EAEB9",
@@ -11,6 +12,12 @@
     {
       "src": "./icon-192.png",
       "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     }
