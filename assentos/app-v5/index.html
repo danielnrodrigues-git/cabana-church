@@ -47,6 +47,16 @@ select,input{width:100%;border:1px solid #cad4da;border-radius:12px;padding:11px
       <button class="btn" onclick="refreshAll()">Atualizar</button>
       <button class="btn btn-dark" id="backstageMainBtn" onclick="openBackstage()">Backstage</button>
     </div>
+    <div class="auto-close-box" id="autoCloseBox" style="display:none">
+      <div class="auto-close-head">
+        <div>
+          <div class="auto-close-title">Fechamento automático de reservas</div>
+          <div class="auto-close-sub">Fecha as reservas 1 hora antes de cada culto.</div>
+        </div>
+        <label class="switch-row"><input type="checkbox" id="autoCloseToggle" onchange="setAutoClose(this.checked)"><span id="autoCloseState" class="auto-close-state">Carregando...</span></label>
+      </div>
+      <div class="auto-close-meta" id="autoCloseMeta"></div>
+    </div>
     <div class="status" id="status"></div>
     <div id="adminModeBar" style="display:none;margin-top:10px"></div>
   </section>
@@ -118,16 +128,6 @@ select,input{width:100%;border:1px solid #cad4da;border-radius:12px;padding:11px
   </div>
   <div id="backstagePanel" style="display:none">
     <div class="msg show" id="backstageWho"></div>
-    <div class="auto-close-box" id="autoCloseBox">
-      <div class="auto-close-head">
-        <div>
-          <div class="auto-close-title">Fechamento automático de reservas</div>
-          <div class="auto-close-sub">Fecha as reservas 1 hora antes de cada culto.</div>
-        </div>
-        <label class="switch-row"><input type="checkbox" id="autoCloseToggle" onchange="setAutoClose(this.checked)"><span id="autoCloseState" class="auto-close-state">Carregando...</span></label>
-      </div>
-      <div class="auto-close-meta" id="autoCloseMeta"></div>
-    </div>
     <div class="admin-tabs">
       <button class="admin-tab active" data-tab="cultos" onclick="showAdminTab('cultos',this)">Cultos</button>
       <button class="admin-tab" data-tab="reservas" onclick="showAdminTab('reservas',this)">Reservas Especiais</button>
@@ -580,14 +580,17 @@ function renderAdminModeBar(){
   var bar=document.getElementById('adminModeBar');if(!bar)return;
   var shareBar=document.getElementById('mapShareBar');
   var mainBtn=document.getElementById('backstageMainBtn');
+  var autoCloseBox=document.getElementById('autoCloseBox');
   if(!backstageToken||!backstageUserInfo){
     bar.style.display='none';
     bar.innerHTML='';
     if(shareBar)shareBar.style.display='none';
     if(mainBtn)mainBtn.style.display='inline-block';
+    if(autoCloseBox)autoCloseBox.style.display='none';
     return;
   }
   if(mainBtn)mainBtn.style.display='none';
+  if(autoCloseBox)autoCloseBox.style.display='block';
   bar.style.display='block';if(shareBar)shareBar.style.display='block';
   bar.innerHTML='<div class="admin-mode"><div><strong>Modo '+escapeHtml(backstageUserInfo.profile)+'</strong><br><span>Usuário: '+escapeHtml(backstageUserInfo.name)+'</span></div><div class="admin-mode-actions"><button class="btn" onclick="openBackstage()">Painel</button><button class="btn" onclick="logoutBackstage()">Sair</button></div></div>';
 }
