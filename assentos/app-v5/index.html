@@ -312,12 +312,15 @@ function fillBackstageUsers(users){
   });
 }
 function openBackstage(){
+  if(backstageToken){
+    renderAdminModeBar();
+    return;
+  }
   loading(true);
   api('getBackstageUsers',[]).then(function(r){
     if(!r.ok)throw new Error(r.message||'Falha ao carregar usuários.');
     fillBackstageUsers(r.users||[]);
     show('backstageModal');
-    if(backstageToken) return loadAdminPanel();
     document.getElementById('backstageLogin').style.display='block';
     document.getElementById('backstageSetup').style.display='none';
     document.getElementById('backstagePanel').style.display='none';
