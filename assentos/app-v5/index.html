@@ -17,7 +17,7 @@ main{max-width:1060px;margin:auto;padding:20px 14px 28px}.hero{text-align:center
 .toolbar{display:flex;gap:10px;align-items:end;flex-wrap:wrap}.field{flex:1;min-width:240px}.field label{display:block;font-size:11px;font-weight:800;margin-bottom:6px;color:#53606a}
 select,input{width:100%;border:1px solid #cad4da;border-radius:12px;padding:11px 12px;font-size:15px;background:#fff;color:var(--ink)}
 .btn{border:1px solid #cbd5da;background:#fff;color:var(--ink);border-radius:12px;padding:11px 14px;font-weight:800;cursor:pointer}.btn-primary{background:var(--teal);border-color:var(--teal);color:#fff}.btn-dark{background:var(--ink);color:#fff;border-color:var(--ink)}
-.status{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.chip{font-size:11px;font-weight:800;padding:6px 9px;border-radius:999px;background:#f0f3f5}.chip.open{background:#e8f7f8;color:#11727a}.chip.closed{background:#fff0f0;color:#a43e3e}
+.status{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.chip{font-size:11px;font-weight:800;padding:6px 9px;border-radius:999px;background:#f0f3f5}.chip.open{background:#e8f7f8;color:#11727a}.chip.closed{background:#fff0f0;color:#a43e3e}.admin-mode{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#172033;color:#fff;border-radius:12px;padding:10px 12px;flex-wrap:wrap}.admin-mode strong{font-size:13px}.admin-mode span{font-size:12px;opacity:.9}.admin-mode-actions{display:flex;gap:6px}.admin-mode .btn{padding:7px 10px;font-size:11px;background:#fff;color:#172033;border-color:#fff}
 .instructions{text-align:center;color:var(--muted);font-size:13px;margin:10px 0}
 .map{overflow:auto;padding:16px 8px}.altar{margin:0 auto 16px;max-width:700px;height:42px;border:2px solid #cfd7dc;border-radius:14px 14px 6px 6px;display:grid;place-items:center;font-weight:900;color:#78838c;background:#fafbfb}
 .stage{min-width:850px;display:grid;grid-template-columns:180px 1fr 180px;gap:18px;align-items:start}.side-grid{display:grid;grid-template-columns:repeat(9,1fr);gap:5px;margin-bottom:7px}.center{display:flex;flex-direction:column;gap:12px}
@@ -47,6 +47,7 @@ select,input{width:100%;border:1px solid #cad4da;border-radius:12px;padding:11px
       <button class="btn btn-dark" onclick="openBackstage()">Backstage</button>
     </div>
     <div class="status" id="status"></div>
+    <div id="adminModeBar" style="display:none;margin-top:10px"></div>
   </section>
   <div class="instructions" id="instruction">Toque em um assento livre para reservar.</div>
   <section class="card">
@@ -171,7 +172,7 @@ select,input{width:100%;border:1px solid #cad4da;border-radius:12px;padding:11px
 var API='https://hqqsymgbepgzxydmgtmd.supabase.co/functions/v1/meu-assento-api';
 var SUPABASE_URL='https://hqqsymgbepgzxydmgtmd.supabase.co';
 var SUPABASE_KEY='sb_publishable_vihLcuNEo1C23w4awZP7zQ_aEjqbeZZ';
-var bootstrap=null,currentService='',seats=[],selectedSeat='',selectedSpecialSeat='',selectedLeadershipReservation='',backstageToken=localStorage.getItem('meuAssentoV5BackstageToken')||'',systemConfirmResolver=null;
+var bootstrap=null,currentService='',seats=[],selectedSeat='',selectedSpecialSeat='',selectedLeadershipReservation='',backstageToken=localStorage.getItem('meuAssentoV5BackstageToken')||'',backstageUserInfo=null,systemConfirmResolver=null;
 function api(method,args){return fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({method:method,args:args||[]})}).then(function(r){if(!r.ok)throw new Error('Falha de comunicação ('+r.status+')');return r.json();});}
 function rpc(fn,body){return fetch(SUPABASE_URL+'/rest/v1/rpc/'+fn,{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY},body:JSON.stringify(body||{})}).then(function(r){if(!r.ok)throw new Error('Falha administrativa ('+r.status+')');return r.json();});}
 function loading(v){document.getElementById('loading').className=v?'loading show':'loading';}
@@ -194,7 +195,7 @@ function resolveSystemConfirm(value){
 function refreshAll(){loading(true);api('getBootstrap',[]).then(function(b){bootstrap=b;document.getElementById('version').textContent=b.version||'V5.0.0';renderServices();return loadService();}).catch(function(e){alert(e.message)}).finally(function(){loading(false)})}
 function renderServices(){var s=document.getElementById('service');s.innerHTML='';var list=(bootstrap&&bootstrap.cultos)||[];if(!list.length){s.innerHTML='<option value="">Nenhum culto disponível</option>';currentService='';return}list.forEach(function(c){var o=document.createElement('option');o.value=c.id;o.textContent=c.day+' • '+c.date+' • '+c.time+' • '+c.name+' ['+c.status+']';s.appendChild(o)});if(!currentService||!list.some(function(c){return c.id===currentService}))currentService=list[0].id;s.value=currentService}
 function loadService(){var s=document.getElementById('service');currentService=s.value||'';if(!currentService){clearMap();return Promise.resolve()}loading(true);return Promise.all([api('getSeats',[currentService,'']),api('getReservationList',[currentService,''])]).then(function(x){var a=x[0],b=x[1];if(!a.ok)throw new Error(a.message||'Culto indisponível');seats=a.seats||[];renderStatus(a.culto,a.canReserve);renderMap(a.canReserve);renderReservations((b&&b.reservations)||[],false)}).catch(function(e){alert(e.message)}).finally(function(){loading(false)})}
-function renderStatus(c,can){var e=document.getElementById('status');if(!c){e.innerHTML='';return}e.innerHTML='<span class="chip">'+c.day+' • '+c.date+' • '+c.time+'</span><span class="chip '+(can?'open':'closed')+'">'+(can?'Reservas abertas':'Reservas encerradas')+'</span>'}
+function renderStatus(c,can){var e=document.getElementById('status');if(!c){e.innerHTML='';return}e.innerHTML='<span class="chip">'+c.day+' • '+c.date+' • '+c.time+'</span><span class="chip '+(can?'open':'closed')+'">'+(can?'Reservas abertas':'Reservas encerradas')+'</span>';renderAdminModeBar()}
 function clearMap(){['row1','row2','row3','leftSide','rightSide'].forEach(function(id){document.getElementById(id).innerHTML=''});document.getElementById('reservations').innerHTML='<div class="empty">Nenhum culto disponível.</div>'}
 function seatById(id){return seats.find(function(x){return String(x.id)===String(id)})}
 function seatButton(id){
@@ -343,7 +344,9 @@ function loadAdminPanel(){
     document.getElementById('backstageLogin').style.display='none';
     document.getElementById('backstageSetup').style.display='none';
     document.getElementById('backstagePanel').style.display='block';
+    backstageUserInfo=r.user;
     document.getElementById('backstageWho').textContent=r.user.name+' • '+r.user.profile;
+    renderAdminModeBar();
     if(seats&&seats.length)renderMap(true);
     renderAdminServices(r.services||[]);
     renderAdminLeaders(r.leaders||[]);
@@ -447,10 +450,16 @@ function setAttendance(serviceId,leaderId,status){
     return loadAttendance();
   }).catch(function(e){alert(e.message)}).finally(function(){loading(false)});
 }
+function renderAdminModeBar(){
+  var bar=document.getElementById('adminModeBar');if(!bar)return;
+  if(!backstageToken||!backstageUserInfo){bar.style.display='none';bar.innerHTML='';return}
+  bar.style.display='block';
+  bar.innerHTML='<div class="admin-mode"><div><strong>Modo '+escapeHtml(backstageUserInfo.profile)+'</strong><br><span>Usuário: '+escapeHtml(backstageUserInfo.name)+'</span></div><div class="admin-mode-actions"><button class="btn" onclick="openBackstage()">Painel</button><button class="btn" onclick="logoutBackstage()">Sair</button></div></div>';
+}
 function logoutBackstage(){
   systemConfirm('Deseja realmente sair do Backstage?',{title:'Sair do Backstage',okText:'Sair'}).then(function(ok){
     if(!ok)return;
-    var t=backstageToken;backstageToken='';localStorage.removeItem('meuAssentoV5BackstageToken');
+    var t=backstageToken;backstageToken='';backstageUserInfo=null;localStorage.removeItem('meuAssentoV5BackstageToken');renderAdminModeBar();
     api('logoutBackstage',[t]).finally(function(){closeModal('backstageModal');if(seats&&seats.length)renderMap(false)});
   });
 }
