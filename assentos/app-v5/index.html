@@ -26,7 +26,7 @@ select,input{width:100%;border:1px solid #cad4da;border-radius:12px;padding:11px
 .table{width:34px;height:22px;border-radius:7px;background:#a8824a}.legend{display:flex;gap:13px;flex-wrap:wrap;justify-content:center;padding-top:14px;font-size:11px;color:#59656e}.legend span{display:flex;align-items:center;gap:6px}.dot{width:13px;height:13px;border-radius:4px}
 .preview-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}.reservation-row{display:flex;justify-content:space-between;gap:10px;border-top:1px solid #edf0f2;padding:9px 0;font-size:13px}.reservation-row:first-child{border-top:0}.muted{color:var(--muted)}
 .empty{text-align:center;padding:25px 10px;color:var(--muted)}footer{text-align:center;color:#7b858c;font-size:11px;padding:10px 10px 24px}.version{background:#e9f7f8;color:#17747c;border-radius:999px;padding:4px 8px;font-weight:800}
-.modal{position:fixed;inset:0;background:rgba(9,20,28,.56);display:none;place-items:center;padding:16px;z-index:30}.modal.show{display:grid}.modal-box{background:#fff;border-radius:20px;padding:20px;width:min(470px,100%);max-height:90vh;overflow:auto}.modal-head{display:flex;justify-content:space-between;gap:10px}.modal h2{margin:0 0 5px}.close{border:0;background:#eef2f4;border-radius:50%;width:34px;height:34px;font-size:21px}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}.form-row{margin-top:12px}.msg{margin-top:10px;padding:10px 12px;border-radius:11px;background:#f4f8f9;color:#4b5963;font-size:13px;display:none}.msg.show{display:block}.msg.error{background:#fff0f0;color:#9e3434}.loading{position:fixed;inset:0;background:rgba(255,255,255,.68);display:none;place-items:center;z-index:50;font-weight:800}.loading.show{display:grid}
+.modal{position:fixed;inset:0;background:rgba(9,20,28,.56);display:none;place-items:center;padding:16px;z-index:30}.modal.show{display:grid}.modal-box{background:#fff;border-radius:20px;padding:20px;width:min(470px,100%);max-height:90vh;overflow:auto}.modal-head{display:flex;justify-content:space-between;gap:10px;position:sticky;top:-20px;background:#fff;z-index:3;padding:6px 0 10px}.modal h2{margin:0 0 5px}.close{border:0;background:#eef2f4;border-radius:50%;width:34px;height:34px;font-size:21px}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}.form-row{margin-top:12px}.msg{margin-top:10px;padding:10px 12px;border-radius:11px;background:#f4f8f9;color:#4b5963;font-size:13px;display:none}.msg.show{display:block}.msg.error{background:#fff0f0;color:#9e3434}.loading{position:fixed;inset:0;background:rgba(255,255,255,.68);display:none;place-items:center;z-index:50;font-weight:800}.loading.show{display:grid}.admin-tabs{display:flex;gap:6px;overflow:auto;margin:14px 0 10px;position:sticky;top:48px;background:#fff;z-index:2;padding:6px 0}.admin-tab{white-space:nowrap;border:1px solid #d5dde2;background:#fff;border-radius:999px;padding:8px 11px;font-weight:800;font-size:12px;cursor:pointer}.admin-tab.active{background:var(--ink);color:#fff;border-color:var(--ink)}.admin-section{display:none}.admin-section.active{display:block}.admin-list{border:1px solid #e6ebee;border-radius:14px;overflow:hidden}.admin-item{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 12px;border-top:1px solid #edf0f2}.admin-item:first-child{border-top:0}.admin-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.mini{font-size:11px;padding:7px 9px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.admin-footer{position:sticky;bottom:-20px;background:#fff;padding:12px 0 4px;margin-top:12px;border-top:1px solid #edf0f2}@media(max-width:620px){.grid2{grid-template-columns:1fr}.admin-item{align-items:flex-start;flex-direction:column}.admin-actions{justify-content:flex-start}}
 @media(max-width:620px){header{padding-top:max(18px,env(safe-area-inset-top))}.brand-name{font-size:21px}.hero h1{font-size:25px}.toolbar{align-items:stretch}.field{min-width:100%}.toolbar .btn{flex:1}.card{border-radius:16px}.stage{min-width:810px}}
 </style>
 </head>
@@ -111,9 +111,43 @@ select,input{width:100%;border:1px solid #cad4da;border-radius:12px;padding:11px
   </div>
   <div id="backstagePanel" style="display:none">
     <div class="msg show" id="backstageWho"></div>
-    <div style="margin-top:14px"><strong>Cultos</strong></div>
-    <div id="adminServices" class="empty">Carregando...</div>
-    <div class="modal-actions"><button class="btn" onclick="logoutBackstage()">Sair</button></div>
+    <div class="admin-tabs">
+      <button class="admin-tab active" data-tab="cultos" onclick="showAdminTab('cultos',this)">Cultos</button>
+      <button class="admin-tab" data-tab="reservas" onclick="showAdminTab('reservas',this)">Reservas Especiais</button>
+      <button class="admin-tab" data-tab="liderancas" onclick="showAdminTab('liderancas',this)">Lideranças</button>
+      <button class="admin-tab" data-tab="usuarios" onclick="showAdminTab('usuarios',this)">Usuários</button>
+      <button class="admin-tab" data-tab="presenca" onclick="showAdminTab('presenca',this)">Presença</button>
+    </div>
+
+    <div class="admin-section active" id="admin-cultos">
+      <div id="adminServices" class="empty">Carregando...</div>
+    </div>
+
+    <div class="admin-section" id="admin-reservas">
+      <div class="grid2">
+        <div class="form-row"><label>Culto</label><select id="specialService"></select></div>
+        <div class="form-row"><label>Categoria</label><select id="specialCategory"><option>Reservado</option><option>Backstage</option><option>Creative</option><option>Level-Up</option></select></div>
+      </div>
+      <div class="form-row"><button class="btn btn-primary" onclick="loadSpecialSeats()">Carregar assentos</button></div>
+      <div id="specialSeats" class="empty">Selecione um culto para gerenciar Reservas Especiais.</div>
+    </div>
+
+    <div class="admin-section" id="admin-liderancas">
+      <div id="adminLeaders" class="empty">Carregando...</div>
+    </div>
+
+    <div class="admin-section" id="admin-usuarios">
+      <div id="adminUsers" class="empty">Carregando...</div>
+      <div class="msg show" style="margin-top:12px">Nesta etapa, a gestão de usuários está em modo consulta. Redefinição de PIN e novos usuários entram no próximo bloco.</div>
+    </div>
+
+    <div class="admin-section" id="admin-presenca">
+      <div class="form-row"><label>Culto</label><select id="attendanceService"></select></div>
+      <div class="form-row"><button class="btn btn-primary" onclick="loadAttendance()">Carregar presença</button></div>
+      <div id="attendanceRows" class="empty">Selecione um culto.</div>
+    </div>
+
+    <div class="admin-footer"><div class="modal-actions" style="margin-top:0"><button class="btn" onclick="closeModal('backstageModal')">Fechar painel</button><button class="btn btn-dark" onclick="logoutBackstage()">Sair</button></div></div>
   </div>
 </div></div>
 
@@ -121,8 +155,11 @@ select,input{width:100%;border:1px solid #cad4da;border-radius:12px;padding:11px
 
 <script>
 var API='https://hqqsymgbepgzxydmgtmd.supabase.co/functions/v1/meu-assento-api';
+var SUPABASE_URL='https://hqqsymgbepgzxydmgtmd.supabase.co';
+var SUPABASE_KEY='sb_publishable_vihLcuNEo1C23w4awZP7zQ_aEjqbeZZ';
 var bootstrap=null,currentService='',seats=[],selectedSeat='',backstageToken=localStorage.getItem('meuAssentoV5BackstageToken')||'';
 function api(method,args){return fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({method:method,args:args||[]})}).then(function(r){if(!r.ok)throw new Error('Falha de comunicação ('+r.status+')');return r.json();});}
+function rpc(fn,body){return fetch(SUPABASE_URL+'/rest/v1/rpc/'+fn,{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY},body:JSON.stringify(body||{})}).then(function(r){if(!r.ok)throw new Error('Falha administrativa ('+r.status+')');return r.json();});}
 function loading(v){document.getElementById('loading').className=v?'loading show':'loading';}
 function show(id){document.getElementById(id).classList.add('show')} function closeModal(id){document.getElementById(id).classList.remove('show')}
 function message(id,text,error){var e=document.getElementById(id);e.textContent=text||'';e.className='msg'+(text?' show':'')+(error?' error':'');}
@@ -191,33 +228,117 @@ function loginBackstage(){
 }
 function loadAdminPanel(){
   if(!backstageToken)return;
-  loading(true);api('getAdminServices',[backstageToken]).then(function(r){
+  loading(true);
+  rpc('v5_admin_dashboard',{p_token:backstageToken}).then(function(r){
     if(!r.ok){backstageToken='';localStorage.removeItem('meuAssentoV5BackstageToken');message('backstageMsg',r.message||'Sessão expirada.',true);return}
-    document.getElementById('backstageLogin').style.display='none';document.getElementById('backstageSetup').style.display='none';document.getElementById('backstagePanel').style.display='block';
+    document.getElementById('backstageLogin').style.display='none';
+    document.getElementById('backstageSetup').style.display='none';
+    document.getElementById('backstagePanel').style.display='block';
     document.getElementById('backstageWho').textContent=r.user.name+' • '+r.user.profile;
     renderAdminServices(r.services||[]);
+    renderAdminLeaders(r.leaders||[]);
+    renderAdminUsers(r.users||[]);
+    fillAdminServiceSelectors(r.services||[]);
   }).catch(function(e){alert(e.message)}).finally(function(){loading(false)});
+}
+function showAdminTab(name,btn){
+  document.querySelectorAll('.admin-section').forEach(function(x){x.classList.remove('active')});
+  document.querySelectorAll('.admin-tab').forEach(function(x){x.classList.remove('active')});
+  document.getElementById('admin-'+name).classList.add('active'); if(btn)btn.classList.add('active');
 }
 function renderAdminServices(list){
   var box=document.getElementById('adminServices');
   if(!list.length){box.innerHTML='<div class="empty">Nenhum culto cadastrado.</div>';return}
+  box.className='admin-list';
   box.innerHTML=list.map(function(c){
     var next=c.status==='Aberto'?'Fechado':'Aberto';
     var label=c.status==='Aberto'?'Fechar reservas':'Abrir reservas';
-    return '<div class="reservation-row"><div><strong>'+escapeHtml(c.name)+'</strong><div class="muted">'+escapeHtml(c.date+' • '+c.time+' • '+c.status)+'</div></div><button class="btn '+(next==='Aberto'?'btn-primary':'')+'" onclick="setServiceStatus(\''+c.id+'\',\''+next+'\')">'+label+'</button></div>';
+    return '<div class="admin-item"><div><strong>'+escapeHtml(c.name)+'</strong><div class="muted">'+escapeHtml(c.date+' • '+c.time+' • '+c.status)+'</div></div><div class="admin-actions"><button class="btn mini" onclick="toggleFront(\''+c.id+'\','+(!c.allowPresbyterFirstRow)+')">'+(c.allowPresbyterFirstRow?'Bloquear 01–08 p/ Presbíteros':'Liberar 01–08 p/ Presbíteros')+'</button><button class="btn mini '+(next==='Aberto'?'btn-primary':'')+'" onclick="setServiceStatus(\''+c.id+'\',\''+next+'\')">'+label+'</button></div></div>';
   }).join('');
 }
+function fillAdminServiceSelectors(list){
+  ['specialService','attendanceService'].forEach(function(id){
+    var s=document.getElementById(id);s.innerHTML='';
+    (list||[]).forEach(function(c){var o=document.createElement('option');o.value=c.id;o.textContent=c.date+' • '+c.time+' • '+c.name+' • '+c.status;s.appendChild(o)});
+  });
+}
 function setServiceStatus(id,status){
-  loading(true);api('setServiceStatus',[{token:backstageToken,serviceId:id,status:status}]).then(function(r){
+  loading(true);rpc('v5_set_service_status',{p_token:backstageToken,p_service_id:id,p_status:status}).then(function(r){
     if(!r.ok)throw new Error(r.message||'Não foi possível alterar o culto.');
     return Promise.all([loadAdminPanel(),refreshAll()]);
+  }).catch(function(e){alert(e.message)}).finally(function(){loading(false)});
+}
+function toggleFront(id,enabled){
+  loading(true);rpc('v5_set_presbyter_front',{p_token:backstageToken,p_service_id:id,p_enabled:enabled}).then(function(r){
+    if(!r.ok)throw new Error(r.message||'Não foi possível alterar a regra.');
+    return loadAdminPanel();
+  }).catch(function(e){alert(e.message)}).finally(function(){loading(false)});
+}
+function renderAdminLeaders(list){
+  var box=document.getElementById('adminLeaders');box.className='admin-list';
+  box.innerHTML=(list||[]).map(function(l){
+    return '<div class="admin-item"><div><strong>'+escapeHtml(l.displayName)+'</strong><div class="muted">'+escapeHtml(l.title)+' • '+(l.active?'Ativa':'Inativa')+'</div></div><div class="admin-actions"><button class="btn mini" onclick="setLeaderActive(\''+l.id+'\','+(!l.active)+')">'+(l.active?'Inativar':'Ativar')+'</button></div></div>';
+  }).join('')||'<div class="empty">Nenhuma liderança.</div>';
+}
+function setLeaderActive(id,active){
+  loading(true);rpc('v5_set_leader_active',{p_token:backstageToken,p_leader_id:id,p_active:active}).then(function(r){
+    if(!r.ok)throw new Error(r.message||'Não foi possível alterar a liderança.');
+    return Promise.all([loadAdminPanel(),refreshAll()]);
+  }).catch(function(e){alert(e.message)}).finally(function(){loading(false)});
+}
+function renderAdminUsers(list){
+  var box=document.getElementById('adminUsers');box.className='admin-list';
+  box.innerHTML=(list||[]).map(function(u){return '<div class="admin-item"><div><strong>'+escapeHtml(u.name)+'</strong><div class="muted">'+escapeHtml(u.profile)+' • '+(u.active?'Ativo':'Inativo')+(u.setupRequired?' • primeiro acesso pendente':'')+'</div></div></div>'}).join('')||'<div class="empty">Nenhum usuário.</div>';
+}
+function loadSpecialSeats(){
+  var serviceId=document.getElementById('specialService').value;if(!serviceId)return;
+  loading(true);rpc('v5_admin_seats',{p_token:backstageToken,p_service_id:serviceId}).then(function(r){
+    if(!r.ok)throw new Error(r.message||'Falha ao carregar assentos.');
+    var box=document.getElementById('specialSeats');box.className='admin-list';
+    box.innerHTML=(r.seats||[]).map(function(s){
+      var label=s.number?'Assento '+String(s.number).padStart(2,'0'):(s.block+' F'+s.row+' P'+s.position);
+      if(s.occupied){
+        return '<div class="admin-item"><div><strong>'+escapeHtml(label)+'</strong><div class="muted">'+escapeHtml((s.reservation&&s.reservation.type)||'Reservado')+' • '+escapeHtml((s.reservation&&s.reservation.name)||'')+'</div></div><button class="btn mini" onclick="cancelAdminReservation(\''+s.reservation.id+'\')">Cancelar</button></div>';
+      }
+      return '<div class="admin-item"><div><strong>'+escapeHtml(label)+'</strong><div class="muted">Livre</div></div><button class="btn mini btn-primary" onclick="createSpecialReservation(\''+serviceId+'\',\''+s.id+'\')">Reservar</button></div>';
+    }).join('');
+  }).catch(function(e){alert(e.message)}).finally(function(){loading(false)});
+}
+function createSpecialReservation(serviceId,seatId){
+  var category=document.getElementById('specialCategory').value;
+  loading(true);rpc('v5_special_reservation',{p_token:backstageToken,p_service_id:serviceId,p_seat_id:seatId,p_category:category}).then(function(r){
+    if(!r.ok)throw new Error(r.message||'Não foi possível reservar.');
+    return Promise.all([loadSpecialSeats(),refreshAll()]);
+  }).catch(function(e){alert(e.message)}).finally(function(){loading(false)});
+}
+function cancelAdminReservation(id){
+  if(!confirm('Cancelar esta reserva?'))return;
+  loading(true);rpc('v5_cancel_reservation',{p_token:backstageToken,p_reservation_id:id}).then(function(r){
+    if(!r.ok)throw new Error(r.message||'Não foi possível cancelar.');
+    return Promise.all([loadSpecialSeats(),refreshAll()]);
+  }).catch(function(e){alert(e.message)}).finally(function(){loading(false)});
+}
+function loadAttendance(){
+  var serviceId=document.getElementById('attendanceService').value;if(!serviceId)return;
+  loading(true);rpc('v5_attendance',{p_token:backstageToken,p_service_id:serviceId}).then(function(r){
+    if(!r.ok)throw new Error(r.message||'Falha ao carregar presença.');
+    var box=document.getElementById('attendanceRows');box.className='admin-list';
+    box.innerHTML=(r.rows||[]).map(function(x){
+      var next=x.status==='Presente'?'Ausente':'Presente';
+      return '<div class="admin-item"><div><strong>'+escapeHtml(x.name)+'</strong><div class="muted">'+escapeHtml(x.title)+' • '+escapeHtml(x.status)+' • '+escapeHtml(x.source)+'</div></div><button class="btn mini" onclick="setAttendance(\''+serviceId+'\',\''+x.leaderId+'\',\''+next+'\')">Marcar '+next+'</button></div>';
+    }).join('');
+  }).catch(function(e){alert(e.message)}).finally(function(){loading(false)});
+}
+function setAttendance(serviceId,leaderId,status){
+  loading(true);rpc('v5_set_attendance',{p_token:backstageToken,p_service_id:serviceId,p_leader_id:leaderId,p_status:status}).then(function(r){
+    if(!r.ok)throw new Error(r.message||'Não foi possível atualizar.');
+    return loadAttendance();
   }).catch(function(e){alert(e.message)}).finally(function(){loading(false)});
 }
 function logoutBackstage(){
   var t=backstageToken;backstageToken='';localStorage.removeItem('meuAssentoV5BackstageToken');
   api('logoutBackstage',[t]).finally(function(){closeModal('backstageModal')});
 }
-
 window.addEventListener('load',refreshAll);
 </script>
 </body>
