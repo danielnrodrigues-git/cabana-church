@@ -20,12 +20,9 @@ select,input{width:100%;border:1px solid #cad4da;border-radius:12px;padding:11px
 .btn{border:1px solid #cbd5da;background:#fff;color:var(--ink);border-radius:12px;padding:11px 14px;font-weight:800;cursor:pointer}.btn-primary{background:var(--teal);border-color:var(--teal);color:#fff}.btn-dark{background:var(--ink);color:#fff;border-color:var(--ink)}
 .status{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.chip{font-size:11px;font-weight:800;padding:6px 9px;border-radius:999px;background:#f0f3f5}.chip.open{background:#e8f7f8;color:#11727a}.chip.closed{background:#fff0f0;color:#a43e3e}.admin-mode{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#172033;color:#fff;border-radius:12px;padding:10px 12px;flex-wrap:wrap}.admin-mode strong{font-size:13px}.admin-mode span{font-size:12px;opacity:.9}.admin-mode-actions{display:flex;gap:6px}.admin-mode .btn{padding:7px 10px;font-size:11px;background:#fff;color:#172033;border-color:#fff}
 .instructions{text-align:center;color:var(--muted);font-size:13px;margin:10px 0}
-.map-shell{border:1px solid #e3e8eb;border-radius:18px;background:#fbfcfc;padding:14px 14px 12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.9)}.map{overflow:auto;padding:0 0 10px}.altar{position:relative;margin:0 auto 18px;max-width:820px;height:102px;border:1px solid #d6dee3;border-radius:12px 12px 6px 6px;display:grid;place-items:center;font-weight:900;font-size:20px;letter-spacing:4px;color:#172033;background:linear-gradient(90deg,#fafbfb 0 30%,#fffdf2 30% 70%,#fafbfb 70%);box-shadow:0 7px 16px rgba(31,45,55,.08)}.altar:before,.altar:after{content:"";position:absolute;top:0;width:28%;height:100%;background:#fafbfb}.altar:before{left:0;border-radius:12px 0 0 6px}.altar:after{right:0;border-radius:0 12px 6px 0}.altar{clip-path:polygon(0 0,28% 0,34% 100%,66% 100%,72% 0,100% 0,100% 100%,0 100%)}.altar>*{position:relative;z-index:2}
-.stage{min-width:780px;display:grid;grid-template-columns:195px 1fr 195px;gap:18px;align-items:start}.stage>div:first-child{padding-right:14px;border-right:1px solid #d9e1e5}.stage>div:last-child{padding-left:14px;border-left:1px solid #d9e1e5}.side-grid{display:grid;grid-template-columns:repeat(9,1fr);gap:5px;margin:7px 0 18px}.center{display:flex;flex-direction:column;gap:12px}
-.row{display:flex;justify-content:center;gap:7px;align-items:center}.seat{width:38px;height:40px;border:0;border-radius:9px;color:#fff;font-weight:900;cursor:pointer;background:var(--teal);box-shadow:inset 0 -2px 0 rgba(0,0,0,.08)}
-.seat.occupied{background:var(--occ)}.seat.special{background:var(--gold);color:#4c3d00}.seat.fixed{background:var(--fixed);cursor:not-allowed}.seat.side{width:15px;height:19px;border-radius:5px;background:var(--side);color:transparent;cursor:default;box-shadow:inset 0 -3px 0 rgba(0,0,0,.04)}.seat.side.special{background:var(--gold);cursor:default}
-.table{width:24px;height:22px;border-radius:50%;background:#a8824a;position:relative}.table:after{content:"";position:absolute;left:50%;top:18px;width:4px;height:16px;background:#765937;transform:translateX(-50%);border-radius:2px}.legend{display:flex;gap:13px;flex-wrap:wrap;justify-content:center;padding:12px 0 4px;font-size:11px;color:#59656e}.legend span{display:flex;align-items:center;gap:6px}.dot{width:13px;height:13px;border-radius:4px}
-.reservations-inline{margin-top:12px;padding-top:14px;border-top:1px solid #e0e6e9}.preview-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}.reservation-row{display:flex;justify-content:space-between;gap:10px;border-top:1px solid #edf0f2;padding:9px 0;font-size:13px}.reservation-row:first-child{border-top:0}.muted{color:var(--muted)}
+.map-card{padding:12px 10px 16px;overflow:hidden}.seat-map-wrap{background:linear-gradient(#fff,#f9fbfb);border-radius:18px;border:1px solid #EDF0F2;overflow:hidden}#seatMap{display:block;width:100%;height:auto;min-height:320px}.map-empty{padding:50px 20px;text-align:center;color:var(--muted)}
+.legend{display:flex;justify-content:center;gap:13px;flex-wrap:wrap;margin:14px 4px 4px;color:#586474;font-size:11px}.legend-item{display:flex;align-items:center;gap:6px}.legend-color{width:16px;height:16px;border-radius:5px}
+.preview-card{margin-top:16px;border-top:1px solid var(--line);padding-top:15px}.preview-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}.preview-head strong{font-size:14px}.link-btn{border:none;background:transparent;color:var(--teal-dark);font-weight:800;padding:4px 0}.reservation-row{display:flex;justify-content:space-between;gap:10px;border-top:1px solid #edf0f2;padding:9px 0;font-size:13px}.reservation-row:first-child{border-top:0}.muted{color:var(--muted)}.seat-svg{transition:.15s ease;transform-box:fill-box;transform-origin:center}.seat-svg.clickable:hover{filter:brightness(.95);transform:translateY(-2px)}
 .empty{text-align:center;padding:25px 10px;color:var(--muted)}footer{width:min(900px,100%);margin:0 auto;text-align:center;color:#7b858c;font-size:11px;padding:10px 10px 24px}.version{background:#e9f7f8;color:#17747c;border-radius:999px;padding:4px 8px;font-weight:800}
 .modal{position:fixed;inset:0;background:rgba(9,20,28,.56);display:none;place-items:center;padding:16px;z-index:30}.modal.show{display:grid}.modal-box{background:#fff;border-radius:20px;padding:20px;width:min(470px,100%);max-height:90vh;overflow:auto}.reserve-modal-box{width:min(560px,94vw);min-height:500px;max-height:90vh}.modal-head{display:flex;justify-content:space-between;gap:10px;position:sticky;top:-20px;background:#fff;z-index:3;padding:6px 0 10px}.modal h2{margin:0 0 5px}.close{border:0;background:#eef2f4;border-radius:50%;width:34px;height:34px;font-size:21px}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}.form-row{margin-top:12px}.autocomplete{position:relative}.autocomplete-list{position:absolute;left:0;right:0;top:calc(100% + 4px);background:#fff;border:1px solid #ccd6dc;border-radius:12px;box-shadow:0 10px 24px rgba(20,35,45,.12);max-height:390px;overflow:auto;z-index:20;display:none}.autocomplete-list.show{display:block}.autocomplete-item{padding:10px 12px;border-top:1px solid #eef1f3;cursor:pointer}.autocomplete-item:first-child{border-top:0}.autocomplete-item:hover{background:#f5f8f9}.autocomplete-item strong{display:block}.autocomplete-create{padding:10px 12px;background:#eef9fa;color:#116b72;font-weight:800;cursor:pointer;border-top:1px solid #d7ecee}.msg{margin-top:10px;padding:10px 12px;border-radius:11px;background:#f4f8f9;color:#4b5963;font-size:13px;display:none}.msg.show{display:block}.msg.error{background:#fff0f0;color:#9e3434}.loading{position:fixed;inset:0;background:rgba(255,255,255,.68);display:none;place-items:center;z-index:50;font-weight:800}.loading.show{display:grid}.admin-tabs{display:flex;gap:6px;overflow:auto;margin:14px 0 10px;position:sticky;top:48px;background:#fff;z-index:2;padding:6px 0}.admin-tab{white-space:nowrap;border:1px solid #d5dde2;background:#fff;border-radius:999px;padding:8px 11px;font-weight:800;font-size:12px;cursor:pointer}.admin-tab.active{background:var(--ink);color:#fff;border-color:var(--ink)}.admin-section{display:none}.admin-section.active{display:block}.admin-list{border:1px solid #e6ebee;border-radius:14px;overflow:hidden}.admin-item{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 12px;border-top:1px solid #edf0f2}.admin-item:first-child{border-top:0}.admin-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.mini{font-size:11px;padding:7px 9px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.auto-close-box{margin:10px 0 12px;padding:12px;border:1px solid #cfe7e9;border-radius:14px;background:#f1fbfb}.auto-close-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.auto-close-title{font-weight:900;font-size:13px}.auto-close-sub{font-size:11px;color:var(--muted);margin-top:3px}.switch-row{display:flex;align-items:center;gap:8px}.switch-row input{width:18px;height:18px}.auto-close-meta{margin-top:8px;font-size:11px;color:#5e6a73;line-height:1.5}.auto-close-state{font-weight:900}.admin-footer{position:sticky;bottom:-20px;background:#fff;padding:12px 0 4px;margin-top:12px;border-top:1px solid #edf0f2}@media(max-width:620px){.grid2{grid-template-columns:1fr}.admin-item{align-items:flex-start;flex-direction:column}.admin-actions{justify-content:flex-start}}
 @media(max-width:620px){header{padding-top:max(14px,env(safe-area-inset-top));padding-bottom:12px}.brand-mark{width:56px;height:31px}.brand-name{font-size:27px}.hero h1{font-size:25px}.toolbar{align-items:stretch}.field{min-width:100%}.toolbar .btn{flex:1}.card{border-radius:16px}.stage{min-width:810px}}
@@ -190,7 +187,7 @@ select,input{width:100%;border:1px solid #cad4da;border-radius:12px;padding:11px
 var API='https://hqqsymgbepgzxydmgtmd.supabase.co/functions/v1/meu-assento-api';
 var SUPABASE_URL='https://hqqsymgbepgzxydmgtmd.supabase.co';
 var SUPABASE_KEY='sb_publishable_vihLcuNEo1C23w4awZP7zQ_aEjqbeZZ';
-var bootstrap=null,currentService='',seats=[],selectedSeat='',selectedSpecialSeat='',selectedLeadershipReservation='',pendingSeatAfterRegistration='',backstageToken=localStorage.getItem('meuAssentoV5BackstageToken')||'',backstageUserInfo=null,backstageUsers=[],attendanceCurrentRows=[],systemConfirmResolver=null;
+var bootstrap=null,currentService='',seats=[],mapCanReserve=false,selectedSeat='',selectedSpecialSeat='',selectedLeadershipReservation='',pendingSeatAfterRegistration='',backstageToken=localStorage.getItem('meuAssentoV5BackstageToken')||'',backstageUserInfo=null,backstageUsers=[],attendanceCurrentRows=[],systemConfirmResolver=null;
 function api(method,args){return fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({method:method,args:args||[]})}).then(function(r){if(!r.ok)throw new Error('Falha de comunicação ('+r.status+')');return r.json();});}
 function rpc(fn,body){return fetch(SUPABASE_URL+'/rest/v1/rpc/'+fn,{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY},body:JSON.stringify(body||{})}).then(function(r){if(!r.ok)throw new Error('Falha administrativa ('+r.status+')');return r.json();});}
 function loading(v){document.getElementById('loading').className=v?'loading show':'loading';}
@@ -214,53 +211,124 @@ function refreshAll(){loading(true);api('getBootstrap',[]).then(function(b){boot
 function renderServices(){var s=document.getElementById('service');s.innerHTML='';var list=(bootstrap&&bootstrap.cultos)||[];if(!list.length){s.innerHTML='<option value="">Nenhum culto disponível</option>';currentService='';return}list.forEach(function(c){var o=document.createElement('option');o.value=c.id;o.textContent=c.day+' • '+c.date+' • '+c.time+' • '+c.name+' ['+c.status+']';s.appendChild(o)});if(!currentService||!list.some(function(c){return c.id===currentService}))currentService=list[0].id;s.value=currentService}
 function loadService(){var s=document.getElementById('service');currentService=s.value||'';if(!currentService){clearMap();return Promise.resolve()}loading(true);return Promise.all([api('getSeats',[currentService,'']),api('getReservationList',[currentService,''])]).then(function(x){var a=x[0],b=x[1];if(!a.ok)throw new Error(a.message||'Culto indisponível');seats=a.seats||[];renderStatus(a.culto,a.canReserve);renderMap(a.canReserve);renderReservations((b&&b.reservations)||[],false)}).catch(function(e){alert(e.message)}).finally(function(){loading(false)})}
 function renderStatus(c,can){var e=document.getElementById('status');if(!c){e.innerHTML='';return}e.innerHTML='<span class="chip">'+c.day+' • '+c.date+' • '+c.time+'</span><span class="chip '+(can?'open':'closed')+'">'+(can?'Reservas abertas':'Reservas encerradas')+'</span>';renderAdminModeBar()}
-function clearMap(){['row1','row2','row3','leftSide','rightSide'].forEach(function(id){document.getElementById(id).innerHTML=''});document.getElementById('reservations').innerHTML='<div class="empty">Nenhum culto disponível.</div>'}
+function clearMap(){var svg=document.getElementById('seatMap'),empty=document.getElementById('mapEmpty');if(svg){svg.innerHTML='';svg.style.display='none'}if(empty){empty.style.display='block';empty.textContent=backstageToken?'Selecione ou crie um culto para visualizar o mapa.':'Ainda não há culto com reservas abertas.'}document.getElementById('reservations').innerHTML='<div class="empty">Nenhum culto disponível.</div>'}
 function seatById(id){return seats.find(function(x){return String(x.id)===String(id)})}
-function seatButton(id){
-  var s=seatById(id);if(!s)return document.createTextNode('');
-  var b=document.createElement('button');b.className='seat';b.textContent=s.number||'';
-  if(s.state==='Ocupado')b.classList.add('occupied');
-  if(s.state==='Reservado')b.classList.add('special');
-  if(s.state==='Bloqueado fixo')b.classList.add('fixed');
-  b.title=s.stateLabel+(s.displayName?' • '+s.displayName:'');
-  if(backstageToken&&s.state==='Ocupado'&&s.reservationType==='Liderança'&&s.reservationId){
-    b.onclick=function(){selectedLeadershipReservation=s.reservationId;systemConfirm('Cancelar a reserva de '+(s.displayName||'esta liderança')+' no Assento '+String(s.number).padStart(2,'0')+'?',{title:'Cancelar reserva de liderança',okText:'Cancelar reserva'}).then(function(ok){if(ok)cancelLeadershipReservationFromMap()})};
-  }else if(!s.occupied&&s.publicReservable&&s.state==='Livre'){
-    b.onclick=function(){openReserve(s)};
+function renderMap(can){
+  mapCanReserve=!!can;
+  var svg=document.getElementById('seatMap');
+  var empty=document.getElementById('mapEmpty');
+  if(!currentService||!seats.length){
+    svg.style.display='none';
+    empty.style.display='block';
+    empty.textContent=backstageToken?'Selecione ou crie um culto para visualizar o mapa.':'Ainda não há culto com reservas abertas.';
+    return;
   }
-  return b
-}
-function renderMap(can){var r1=document.getElementById('row1');r1.innerHTML='';[1,2,3,4].forEach(function(n){r1.appendChild(seatButton(String(n)))});r1.appendChild(seatButton('FIX-BISPO'));var t=document.createElement('div');t.className='table';r1.appendChild(t);r1.appendChild(seatButton('FIX-ACOMP'));[5,6,7,8].forEach(function(n){r1.appendChild(seatButton(String(n)))});
-var r2=document.getElementById('row2');r2.innerHTML='';for(var n=9;n<=19;n++)r2.appendChild(seatButton(String(n)));var r3=document.getElementById('row3');r3.innerHTML='';for(var m=20;m<=30;m++)r3.appendChild(seatButton(String(m)));
-renderSide('leftSide','LE');renderSide('rightSide','LD');document.getElementById('instruction').textContent=can?'Toque em um assento livre para reservar.':'As reservas deste culto estão encerradas.'}
-function renderSide(target,prefix){
-  var box=document.getElementById(target);box.innerHTML='';
-  for(var r=1;r<=3;r++){
-    var g=document.createElement('div');g.className='side-grid';
-    for(var p=1;p<=9;p++){
-      (function(){
-        var s=seatById(prefix+'-R'+r+'-P'+p);
-        var b=document.createElement('button');
-        b.className='seat side'+(s&&s.state==='Reservado'?' special':'');
-        b.title=s?(s.stateLabel+(s.displayName?' • '+s.displayName:'')):'';
-        if(backstageToken&&s){
-          b.disabled=false;
-          b.style.cursor='pointer';
-          b.onclick=function(){
-            if(s.state==='Reservado'&&s.reservationId){
-              systemConfirm('Cancelar esta Reserva Especial?',{title:'Cancelar Reserva Especial',okText:'Cancelar reserva'}).then(function(ok){if(ok)cancelMapSpecial(s.reservationId)});
-            }else if(!s.occupied){
-              openMapSpecial(s);
-            }
-          };
-        }else{
-          b.disabled=true;
-        }
-        g.appendChild(b);
-      })();
+  svg.style.display='block';
+  empty.style.display='none';
+
+  var byKey={};
+  seats.forEach(function(seat){byKey[seat.block+'|'+seat.row+'|'+seat.position]=seat;});
+  var parts=[];
+
+  parts.push('<defs>'+
+    '<linearGradient id="altarFace" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#F0F2F3"/></linearGradient>'+
+    '<radialGradient id="altarWarm" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#FFF1C2" stop-opacity=".48"/><stop offset="1" stop-color="#FFF1C2" stop-opacity="0"/></radialGradient>'+
+    '<filter id="softShadow" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#172033" flood-opacity=".12"/></filter>'+
+    '<filter id="altarShadow" x="-10%" y="-30%" width="120%" height="190%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#172033" flood-opacity=".13"/></filter>'+
+  '</defs>');
+  parts.push('<rect x="0" y="0" width="1000" height="430" rx="26" fill="#FBFCFD"/>');
+  parts.push('<ellipse cx="500" cy="92" rx="330" ry="88" fill="url(#altarWarm)"/>');
+  parts.push('<path d="M28 18 H274 Q294 18 304 36 L338 101 Q347 119 367 119 H633 Q653 119 662 101 L696 36 Q706 18 726 18 H972 Q984 18 984 31 V126 Q984 137 972 137 H28 Q16 137 16 126 V31 Q16 18 28 18 Z" fill="url(#altarFace)" stroke="#E1E6E9" stroke-width="2" filter="url(#altarShadow)"/>');
+  parts.push('<text x="500" y="87" text-anchor="middle" font-size="25" font-weight="850" letter-spacing="7" fill="#172033">ALTAR</text>');
+  parts.push('<line x1="248" y1="151" x2="248" y2="402" stroke="#DDE3E7" stroke-width="2"/>');
+  parts.push('<line x1="752" y1="151" x2="752" y2="402" stroke="#DDE3E7" stroke-width="2"/>');
+
+  ['Lateral Esquerdo','Lateral Direito'].forEach(function(block){
+    var startX=block==='Lateral Esquerdo'?34:788;
+    for(var row=1;row<=3;row++){
+      for(var position=1;position<=9;position++){
+        var s=byKey[block+'|'+row+'|'+position];
+        if(!s)continue;
+        var x=startX+(position-1)*23;
+        var y=168+(row-1)*82;
+        parts.push(svgSeatV44(s,x,y,18,38,true));
+      }
     }
-    box.appendChild(g);
+  });
+
+  for(var row=1;row<=3;row++){
+    for(var position=1;position<=11;position++){
+      var x=272+(position-1)*42;
+      var y=158+(row-1)*82;
+      if(row===1&&position===6){parts.push(svgSideTableV44(x+1,y+4));continue;}
+      var s=byKey['Central|'+row+'|'+position];
+      if(!s)continue;
+      parts.push(svgSeatV44(s,x,y,36,48,false));
+    }
   }
+
+  svg.innerHTML=parts.join('');
+  Array.prototype.forEach.call(svg.querySelectorAll('[data-seat-id]'),function(el){
+    el.addEventListener('click',function(){handleSvgSeatClick(el.getAttribute('data-seat-id'));});
+  });
+  document.getElementById('instruction').textContent=can?'Toque em um assento livre para reservar.':'As reservas deste culto estão encerradas.';
+}
+
+function svgSideTableV44(x,y){
+  return '<g filter="url(#softShadow)">'+
+    '<ellipse cx="'+(x+18)+'" cy="'+(y+7)+'" rx="14" ry="5.5" fill="#A98258"/>'+
+    '<ellipse cx="'+(x+18)+'" cy="'+(y+6)+'" rx="10" ry="3" fill="#C09A6C"/>'+
+    '<rect x="'+(x+15.5)+'" y="'+(y+10)+'" width="5" height="27" rx="2.5" fill="#806548"/>'+
+    '<ellipse cx="'+(x+18)+'" cy="'+(y+38)+'" rx="10.5" ry="3.5" fill="#806548"/>'+
+    '<circle cx="'+(x+18)+'" cy="'+(y+2.5)+'" r="3" fill="#F3C64F"/>'+
+  '</g>';
+}
+function svgSeatV44(s,x,y,w,h,isSide){
+  var color=svgSeatColorV44(s);
+  var clickable=isSvgSeatClickableV44(s);
+  var textColor=s.state==='Reservado'?'#5B4500':'#FFF';
+  var title=escapeHtml(svgSeatTitleV44(s));
+  var label=!isSide&&s.number?String(s.number):'';
+  return '<g class="seat-svg '+(clickable?'clickable':'')+'" '+(clickable?'data-seat-id="'+escapeHtml(s.id)+'" style="cursor:pointer"':'')+'><title>'+title+'</title>'+
+    '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="'+(isSide?8:10)+'" fill="'+color+'" stroke="rgba(0,0,0,.05)"/>'+
+    '<path d="M'+(x+4)+' '+(y+h-8)+' H'+(x+w-4)+'" stroke="rgba(0,0,0,.08)" stroke-width="3" stroke-linecap="round"/>'+
+    (label?'<text x="'+(x+w/2)+'" y="'+(y+h/2+6)+'" text-anchor="middle" font-size="15" font-weight="850" fill="'+textColor+'">'+label+'</text>':'')+
+  '</g>';
+}
+function svgSeatColorV44(s){
+  if(s.state==='Bloqueado fixo')return '#EE8C91';
+  if(s.state==='Reservado')return '#F3C64F';
+  if(s.state==='Ocupado')return '#4E5661';
+  if(s.block!=='Central')return '#D7DCE1';
+  return '#1EAEB9';
+}
+function svgSeatTitleV44(s){
+  if(s.block==='Central'&&s.number)return 'Assento '+String(s.number).padStart(2,'0')+' — '+(s.displayName||s.stateLabel||s.state);
+  if(s.block==='Lateral Esquerdo')return 'Esquerda • Fileira '+s.row+' • Posição '+s.position+' — '+(s.stateLabel||s.state);
+  if(s.block==='Lateral Direito')return 'Direita • Fileira '+s.row+' • Posição '+s.position+' — '+(s.stateLabel||s.state);
+  return s.stateLabel||s.state||'Assento';
+}
+function isSvgSeatClickableV44(s){
+  if(!s||s.state==='Bloqueado fixo')return false;
+  if(backstageToken){
+    if(s.occupied&&s.reservationId)return true;
+    if(s.block!=='Central'&&!s.occupied)return true;
+  }
+  return !s.occupied&&s.publicReservable&&s.state==='Livre'&&mapCanReserve;
+}
+function handleSvgSeatClick(id){
+  var s=seatById(id); if(!s)return;
+  if(backstageToken&&s.occupied&&s.reservationId){
+    if(s.reservationType==='Liderança'||s.state==='Ocupado'){
+      selectedLeadershipReservation=s.reservationId;
+      systemConfirm('Cancelar a reserva de '+(s.displayName||'esta liderança')+' no Assento '+String(s.number||'').padStart(2,'0')+'?',{title:'Cancelar reserva de liderança',okText:'Cancelar reserva'}).then(function(ok){if(ok)cancelLeadershipReservationFromMap()});
+    }else{
+      systemConfirm('Cancelar esta Reserva Especial?',{title:'Cancelar Reserva Especial',okText:'Cancelar reserva'}).then(function(ok){if(ok)cancelMapSpecial(s.reservationId)});
+    }
+    return;
+  }
+  if(backstageToken&&s.block!=='Central'&&!s.occupied){openMapSpecial(s);return;}
+  if(!s.occupied&&s.publicReservable&&s.state==='Livre'&&mapCanReserve){openReserve(s);return;}
 }
 function cancelLeadershipReservationFromMap(){
   if(!selectedLeadershipReservation)return;
