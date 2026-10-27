@@ -1,29 +1,126 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <title>Meu Assento V5</title>
-  <meta name="theme-color" content="#1EAEB9">
-  <style>
-    *{box-sizing:border-box}
-    html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:#f5f7f8;color:#172033}
-    body{min-height:100vh;display:grid;place-items:center;padding:24px}
-    .card{width:min(560px,100%);background:#fff;border-radius:24px;padding:32px;box-shadow:0 12px 40px rgba(0,0,0,.08);text-align:center}
-    .badge{display:inline-block;background:#e8f7f8;color:#156f76;font-weight:700;border-radius:999px;padding:8px 14px;margin-bottom:18px}
-    h1{margin:0 0 10px;font-size:30px}
-    p{margin:0;color:#56626a;line-height:1.55}
-    .ok{margin-top:24px;padding:16px;border-radius:16px;background:#f4f8f9;font-weight:600;color:#128C95}
-    .small{margin-top:18px;font-size:13px;color:#8a949a}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Meu Assento</title>
+<meta name="theme-color" content="#1EAEB9">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Meu Assento">
+<style>
+:root{--teal:#1EAEB9;--teal-dark:#128C95;--ink:#172033;--muted:#68737d;--line:#dfe5e8;--bg:#f5f7f8;--occ:#4E5661;--gold:#F3C64F;--fixed:#EE8C91;--side:#D7DCE1}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:var(--ink)}
+header{background:var(--teal);color:#fff;padding:22px 18px 20px;display:flex;align-items:center;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:11px}.brand-mark{width:48px;height:34px}.brand-name{font-weight:900;font-size:24px;letter-spacing:1px}.brand-sub{font-size:9px;letter-spacing:4px}
+main{max-width:1060px;margin:auto;padding:20px 14px 28px}.hero{text-align:center;margin:6px 0 18px}.hero h1{margin:0;font-size:29px}.hero p{margin:7px 0 0;color:var(--muted)}
+.card{background:#fff;border:1px solid var(--line);border-radius:20px;box-shadow:0 7px 26px rgba(25,42,54,.06);padding:16px;margin-bottom:14px}
+.toolbar{display:flex;gap:10px;align-items:end;flex-wrap:wrap}.field{flex:1;min-width:240px}.field label{display:block;font-size:11px;font-weight:800;margin-bottom:6px;color:#53606a}
+select,input{width:100%;border:1px solid #cad4da;border-radius:12px;padding:11px 12px;font-size:15px;background:#fff;color:var(--ink)}
+.btn{border:1px solid #cbd5da;background:#fff;color:var(--ink);border-radius:12px;padding:11px 14px;font-weight:800;cursor:pointer}.btn-primary{background:var(--teal);border-color:var(--teal);color:#fff}.btn-dark{background:var(--ink);color:#fff;border-color:var(--ink)}
+.status{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.chip{font-size:11px;font-weight:800;padding:6px 9px;border-radius:999px;background:#f0f3f5}.chip.open{background:#e8f7f8;color:#11727a}.chip.closed{background:#fff0f0;color:#a43e3e}
+.instructions{text-align:center;color:var(--muted);font-size:13px;margin:10px 0}
+.map{overflow:auto;padding:16px 8px}.altar{margin:0 auto 16px;max-width:700px;height:42px;border:2px solid #cfd7dc;border-radius:14px 14px 6px 6px;display:grid;place-items:center;font-weight:900;color:#78838c;background:#fafbfb}
+.stage{min-width:850px;display:grid;grid-template-columns:180px 1fr 180px;gap:18px;align-items:start}.side-grid{display:grid;grid-template-columns:repeat(9,1fr);gap:5px;margin-bottom:7px}.center{display:flex;flex-direction:column;gap:12px}
+.row{display:flex;justify-content:center;gap:8px;align-items:center}.seat{width:44px;height:42px;border:0;border-radius:10px;color:#fff;font-weight:900;cursor:pointer;background:var(--teal);box-shadow:inset 0 -2px 0 rgba(0,0,0,.08)}
+.seat.occupied{background:var(--occ)}.seat.special{background:var(--gold);color:#4c3d00}.seat.fixed{background:var(--fixed);cursor:not-allowed}.seat.side{width:16px;height:20px;border-radius:5px;background:var(--side);color:transparent;cursor:default}.seat.side.special{background:var(--gold);cursor:default}
+.table{width:34px;height:22px;border-radius:7px;background:#a8824a}.legend{display:flex;gap:13px;flex-wrap:wrap;justify-content:center;padding-top:14px;font-size:11px;color:#59656e}.legend span{display:flex;align-items:center;gap:6px}.dot{width:13px;height:13px;border-radius:4px}
+.preview-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}.reservation-row{display:flex;justify-content:space-between;gap:10px;border-top:1px solid #edf0f2;padding:9px 0;font-size:13px}.reservation-row:first-child{border-top:0}.muted{color:var(--muted)}
+.empty{text-align:center;padding:25px 10px;color:var(--muted)}footer{text-align:center;color:#7b858c;font-size:11px;padding:10px 10px 24px}.version{background:#e9f7f8;color:#17747c;border-radius:999px;padding:4px 8px;font-weight:800}
+.modal{position:fixed;inset:0;background:rgba(9,20,28,.56);display:none;place-items:center;padding:16px;z-index:30}.modal.show{display:grid}.modal-box{background:#fff;border-radius:20px;padding:20px;width:min(470px,100%);max-height:90vh;overflow:auto}.modal-head{display:flex;justify-content:space-between;gap:10px}.modal h2{margin:0 0 5px}.close{border:0;background:#eef2f4;border-radius:50%;width:34px;height:34px;font-size:21px}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}.form-row{margin-top:12px}.msg{margin-top:10px;padding:10px 12px;border-radius:11px;background:#f4f8f9;color:#4b5963;font-size:13px;display:none}.msg.show{display:block}.msg.error{background:#fff0f0;color:#9e3434}.loading{position:fixed;inset:0;background:rgba(255,255,255,.68);display:none;place-items:center;z-index:50;font-weight:800}.loading.show{display:grid}
+@media(max-width:620px){header{padding-top:max(18px,env(safe-area-inset-top))}.brand-name{font-size:21px}.hero h1{font-size:25px}.toolbar{align-items:stretch}.field{min-width:100%}.toolbar .btn{flex:1}.card{border-radius:16px}.stage{min-width:810px}}
+</style>
 </head>
 <body>
-  <main class="card">
-    <div class="badge">Ambiente de homologação</div>
-    <h1>Meu Assento V5</h1>
-    <p>Frontend hospedado fora do Google Apps Script.</p>
-    <div class="ok">Se você está vendo esta tela pela Vercel, a nova arquitetura está publicada corretamente.</div>
-    <div class="small">Cabana Church</div>
-  </main>
+<header>
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 120 42" aria-hidden="true"><path d="M18 27 L51 7 Q60 2 69 7 L102 27 Q106 30 102 35 Q99 39 94 36 L65 19 Q60 16 55 19 L35 31 H61 Q65 31 68 34 L72 38 H33 Q27 38 22 34 L18 31 Q15 29 18 27Z" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div><div class="brand-name">CABANA</div><div class="brand-sub">CHURCH</div></div>
+  </div>
+  <button class="btn" onclick="openRegistration()">👤 Cadastro</button>
+</header>
+<main>
+  <section class="hero"><h1>Posicionamento Pastoral</h1><p>Reserve seu lugar no altar para servir com excelência.</p></section>
+  <section class="card">
+    <div class="toolbar">
+      <div class="field"><label>Culto</label><select id="service" onchange="loadService()"><option>Carregando...</option></select></div>
+      <button class="btn" onclick="refreshAll()">Atualizar</button>
+      <button class="btn btn-dark" onclick="alert('Backstage será habilitado na próxima etapa da migração V5.')">Backstage</button>
+    </div>
+    <div class="status" id="status"></div>
+  </section>
+  <div class="instructions" id="instruction">Toque em um assento livre para reservar.</div>
+  <section class="card">
+    <div class="map">
+      <div class="altar">ALTAR</div>
+      <div class="stage">
+        <div id="leftSide"></div>
+        <div class="center">
+          <div class="row" id="row1"></div>
+          <div class="row" id="row2"></div>
+          <div class="row" id="row3"></div>
+        </div>
+        <div id="rightSide"></div>
+      </div>
+    </div>
+    <div class="legend">
+      <span><i class="dot" style="background:var(--teal)"></i>Livre</span>
+      <span><i class="dot" style="background:var(--occ)"></i>Reservado por liderança</span>
+      <span><i class="dot" style="background:var(--gold)"></i>Reserva Especial</span>
+      <span><i class="dot" style="background:var(--side)"></i>Assento lateral</span>
+      <span><i class="dot" style="background:var(--fixed)"></i>Assento fixo</span>
+    </div>
+  </section>
+  <section class="card">
+    <div class="preview-head"><strong>Algumas reservas deste culto</strong><button class="btn" onclick="loadReservations(true)">Ver todos</button></div>
+    <div id="reservations"><div class="empty">Carregando reservas...</div></div>
+  </section>
+</main>
+<footer><span class="version" id="version">V5.0.0</span> &nbsp; Cabana Church • Posicionamento Pastoral</footer>
+
+<div class="modal" id="reserveModal"><div class="modal-box">
+  <div class="modal-head"><div><h2 id="reserveTitle">Reservar assento</h2><div class="muted">Selecione sua liderança.</div></div><button class="close" onclick="closeModal('reserveModal')">×</button></div>
+  <div class="form-row"><label>Liderança</label><select id="leaderSelect"></select></div>
+  <div class="msg" id="reserveMsg"></div>
+  <div class="modal-actions"><button class="btn" onclick="closeModal('reserveModal')">Cancelar</button><button class="btn btn-primary" onclick="confirmReserve()">Confirmar reserva</button></div>
+</div></div>
+
+<div class="modal" id="registerModal"><div class="modal-box">
+  <div class="modal-head"><div><h2>Primeiro acesso</h2><div class="muted">Cadastre sua liderança para reservar.</div></div><button class="close" onclick="closeModal('registerModal')">×</button></div>
+  <div class="form-row"><label>Nome</label><input id="firstName" autocomplete="given-name"></div>
+  <div class="form-row"><label>Sobrenome</label><input id="lastName" autocomplete="family-name"></div>
+  <div class="form-row"><label>Título</label><select id="title"><option value="">Selecione</option><option>Pastor</option><option>Pastora</option><option>Presbítero</option><option>Presbítera</option><option>Bispo</option><option>Bispa</option></select></div>
+  <div class="msg" id="registerMsg"></div>
+  <div class="modal-actions"><button class="btn" onclick="closeModal('registerModal')">Cancelar</button><button class="btn btn-primary" onclick="registerLeader()">Cadastrar</button></div>
+</div></div>
+
+<div class="loading" id="loading">Atualizando Meu Assento...</div>
+
+<script>
+var API='https://hqqsymgbepgzxydmgtmd.supabase.co/functions/v1/meu-assento-api';
+var bootstrap=null,currentService='',seats=[],selectedSeat='';
+function api(method,args){return fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({method:method,args:args||[]})}).then(function(r){if(!r.ok)throw new Error('Falha de comunicação ('+r.status+')');return r.json();});}
+function loading(v){document.getElementById('loading').className=v?'loading show':'loading';}
+function show(id){document.getElementById(id).classList.add('show')} function closeModal(id){document.getElementById(id).classList.remove('show')}
+function message(id,text,error){var e=document.getElementById(id);e.textContent=text||'';e.className='msg'+(text?' show':'')+(error?' error':'');}
+function refreshAll(){loading(true);api('getBootstrap',[]).then(function(b){bootstrap=b;document.getElementById('version').textContent=b.version||'V5.0.0';renderServices();return loadService();}).catch(function(e){alert(e.message)}).finally(function(){loading(false)})}
+function renderServices(){var s=document.getElementById('service');s.innerHTML='';var list=(bootstrap&&bootstrap.cultos)||[];if(!list.length){s.innerHTML='<option value="">Nenhum culto disponível</option>';currentService='';return}list.forEach(function(c){var o=document.createElement('option');o.value=c.id;o.textContent=c.day+' • '+c.date+' • '+c.time+' • '+c.name+' ['+c.status+']';s.appendChild(o)});if(!currentService||!list.some(function(c){return c.id===currentService}))currentService=list[0].id;s.value=currentService}
+function loadService(){var s=document.getElementById('service');currentService=s.value||'';if(!currentService){clearMap();return Promise.resolve()}loading(true);return Promise.all([api('getSeats',[currentService,'']),api('getReservationList',[currentService,''])]).then(function(x){var a=x[0],b=x[1];if(!a.ok)throw new Error(a.message||'Culto indisponível');seats=a.seats||[];renderStatus(a.culto,a.canReserve);renderMap(a.canReserve);renderReservations((b&&b.reservations)||[],false)}).catch(function(e){alert(e.message)}).finally(function(){loading(false)})}
+function renderStatus(c,can){var e=document.getElementById('status');if(!c){e.innerHTML='';return}e.innerHTML='<span class="chip">'+c.day+' • '+c.date+' • '+c.time+'</span><span class="chip '+(can?'open':'closed')+'">'+(can?'Reservas abertas':'Reservas encerradas')+'</span>'}
+function clearMap(){['row1','row2','row3','leftSide','rightSide'].forEach(function(id){document.getElementById(id).innerHTML=''});document.getElementById('reservations').innerHTML='<div class="empty">Nenhum culto disponível.</div>'}
+function seatById(id){return seats.find(function(x){return String(x.id)===String(id)})}
+function seatButton(id){var s=seatById(id);if(!s)return document.createTextNode('');var b=document.createElement('button');b.className='seat';b.textContent=s.number||'';if(s.state==='Ocupado')b.classList.add('occupied');if(s.state==='Reservado')b.classList.add('special');if(s.state==='Bloqueado fixo')b.classList.add('fixed');b.title=s.stateLabel+(s.displayName?' • '+s.displayName:'');if(!s.occupied&&s.publicReservable&&s.state==='Livre')b.onclick=function(){openReserve(s)};return b}
+function renderMap(can){var r1=document.getElementById('row1');r1.innerHTML='';[1,2,3,4].forEach(function(n){r1.appendChild(seatButton(String(n)))});r1.appendChild(seatButton('FIX-BISPO'));var t=document.createElement('div');t.className='table';r1.appendChild(t);r1.appendChild(seatButton('FIX-ACOMP'));[5,6,7,8].forEach(function(n){r1.appendChild(seatButton(String(n)))});
+var r2=document.getElementById('row2');r2.innerHTML='';for(var n=9;n<=19;n++)r2.appendChild(seatButton(String(n)));var r3=document.getElementById('row3');r3.innerHTML='';for(var m=20;m<=30;m++)r3.appendChild(seatButton(String(m)));
+renderSide('leftSide','LE');renderSide('rightSide','LD');document.getElementById('instruction').textContent=can?'Toque em um assento livre para reservar.':'As reservas deste culto estão encerradas.'}
+function renderSide(target,prefix){var box=document.getElementById(target);box.innerHTML='';for(var r=1;r<=3;r++){var g=document.createElement('div');g.className='side-grid';for(var p=1;p<=9;p++){var s=seatById(prefix+'-R'+r+'-P'+p);var b=document.createElement('button');b.className='seat side'+(s&&s.state==='Reservado'?' special':'');b.disabled=true;g.appendChild(b)}box.appendChild(g)}}
+function openReserve(s){selectedSeat=s.id;document.getElementById('reserveTitle').textContent='Reservar Assento '+String(s.number).padStart(2,'0');var sel=document.getElementById('leaderSelect');sel.innerHTML='<option value="">Selecione seu nome</option>';((bootstrap&&bootstrap.leaders)||[]).forEach(function(l){var o=document.createElement('option');o.value=l.id;o.textContent=l.displayName;sel.appendChild(o)});message('reserveMsg','');show('reserveModal')}
+function confirmReserve(){var leader=document.getElementById('leaderSelect').value;if(!leader){message('reserveMsg','Selecione sua liderança.',true);return}loading(true);api('reserveLeadership',[{cultoId:currentService,seatId:selectedSeat,leaderId:leader,origin:'Próprio',moveExisting:false}]).then(function(r){if(r.ok){closeModal('reserveModal');return refreshAll()}if(r.code==='ALREADY_RESERVED'&&confirm((r.message||'Você já possui uma reserva.')+' Deseja mover sua reserva para este assento?')){return api('reserveLeadership',[{cultoId:currentService,seatId:selectedSeat,leaderId:leader,origin:'Próprio',moveExisting:true}]).then(function(x){if(!x.ok)throw new Error(x.message);closeModal('reserveModal');return refreshAll()})}message('reserveMsg',r.message||'Não foi possível reservar.',true)}).catch(function(e){message('reserveMsg',e.message,true)}).finally(function(){loading(false)})}
+function openRegistration(){message('registerMsg','');show('registerModal')}
+function registerLeader(){var d={firstName:document.getElementById('firstName').value,lastName:document.getElementById('lastName').value,title:document.getElementById('title').value};loading(true);api('registerLeader',[d]).then(function(r){if(!r.ok){message('registerMsg',r.message,true);return}message('registerMsg',r.message,false);setTimeout(function(){closeModal('registerModal');refreshAll()},700)}).catch(function(e){message('registerMsg',e.message,true)}).finally(function(){loading(false)})}
+function loadReservations(all){if(!currentService)return;loading(true);api('getReservationList',[currentService,'']).then(function(r){if(!r.ok)throw new Error(r.message);renderReservations(r.reservations||[],!!all)}).catch(function(e){alert(e.message)}).finally(function(){loading(false)})}
+function renderReservations(list,all){var box=document.getElementById('reservations');if(!list.length){box.innerHTML='<div class="empty">Ainda não há reservas neste culto.</div>';return}var arr=all?list:list.slice(0,5);box.innerHTML=arr.map(function(r){return '<div class="reservation-row"><div><strong>'+escapeHtml(r.displayName||'')+'</strong><div class="muted">'+escapeHtml(r.title||r.stateLabel||'')+'</div></div><strong>'+escapeHtml(r.seatLabel||'')+'</strong></div>'}).join('')+(all?'':'')}
+function escapeHtml(v){return String(v||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+window.addEventListener('load',refreshAll);
+</script>
 </body>
 </html>
