@@ -44,7 +44,7 @@ select,input{width:100%;border:1px solid #cad4da;border-radius:12px;padding:11px
     <div class="toolbar">
       <div class="field"><label>Culto</label><select id="service" onchange="loadService()"><option>Carregando...</option></select></div>
       <button class="btn" onclick="refreshAll()">Atualizar</button>
-      <button class="btn btn-dark" onclick="alert('Backstage será habilitado na próxima etapa da migração V5.')">Backstage</button>
+      <button class="btn btn-dark" onclick="openBackstage()">Backstage</button>
     </div>
     <div class="status" id="status"></div>
   </section>
@@ -93,11 +93,35 @@ select,input{width:100%;border:1px solid #cad4da;border-radius:12px;padding:11px
   <div class="modal-actions"><button class="btn" onclick="closeModal('registerModal')">Cancelar</button><button class="btn btn-primary" onclick="registerLeader()">Cadastrar</button></div>
 </div></div>
 
+
+<div class="modal" id="backstageModal"><div class="modal-box">
+  <div class="modal-head"><div><h2>Backstage</h2><div class="muted">Acesso administrativo da V5.</div></div><button class="close" onclick="closeModal('backstageModal')">×</button></div>
+  <div id="backstageLogin">
+    <div class="form-row"><label>Usuário</label><select id="backstageUser"></select></div>
+    <div class="form-row"><label>PIN de 6 dígitos</label><input id="backstagePin" inputmode="numeric" maxlength="6" type="password"></div>
+    <div class="msg" id="backstageMsg"></div>
+    <div class="modal-actions"><button class="btn" onclick="openV5Setup()">Primeiro acesso V5</button><button class="btn btn-primary" onclick="loginBackstage()">Entrar</button></div>
+  </div>
+  <div id="backstageSetup" style="display:none">
+    <div class="form-row"><label>Usuário</label><select id="setupUser"></select></div>
+    <div class="form-row"><label>Código temporário</label><input id="setupCode" autocapitalize="characters"></div>
+    <div class="form-row"><label>Novo PIN de 6 dígitos</label><input id="setupPin" inputmode="numeric" maxlength="6" type="password"></div>
+    <div class="msg" id="setupMsg"></div>
+    <div class="modal-actions"><button class="btn" onclick="backToLogin()">Voltar</button><button class="btn btn-primary" onclick="setupBackstagePin()">Definir PIN</button></div>
+  </div>
+  <div id="backstagePanel" style="display:none">
+    <div class="msg show" id="backstageWho"></div>
+    <div style="margin-top:14px"><strong>Cultos</strong></div>
+    <div id="adminServices" class="empty">Carregando...</div>
+    <div class="modal-actions"><button class="btn" onclick="logoutBackstage()">Sair</button></div>
+  </div>
+</div></div>
+
 <div class="loading" id="loading">Atualizando Meu Assento...</div>
 
 <script>
 var API='https://hqqsymgbepgzxydmgtmd.supabase.co/functions/v1/meu-assento-api';
-var bootstrap=null,currentService='',seats=[],selectedSeat='';
+var bootstrap=null,currentService='',seats=[],selectedSeat='',backstageToken=localStorage.getItem('meuAssentoV5BackstageToken')||'';
 function api(method,args){return fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({method:method,args:args||[]})}).then(function(r){if(!r.ok)throw new Error('Falha de comunicação ('+r.status+')');return r.json();});}
 function loading(v){document.getElementById('loading').className=v?'loading show':'loading';}
 function show(id){document.getElementById(id).classList.add('show')} function closeModal(id){document.getElementById(id).classList.remove('show')}
@@ -120,6 +144,70 @@ function registerLeader(){var d={firstName:document.getElementById('firstName').
 function loadReservations(all){if(!currentService)return;loading(true);api('getReservationList',[currentService,'']).then(function(r){if(!r.ok)throw new Error(r.message);renderReservations(r.reservations||[],!!all)}).catch(function(e){alert(e.message)}).finally(function(){loading(false)})}
 function renderReservations(list,all){var box=document.getElementById('reservations');if(!list.length){box.innerHTML='<div class="empty">Ainda não há reservas neste culto.</div>';return}var arr=all?list:list.slice(0,5);box.innerHTML=arr.map(function(r){return '<div class="reservation-row"><div><strong>'+escapeHtml(r.displayName||'')+'</strong><div class="muted">'+escapeHtml(r.title||r.stateLabel||'')+'</div></div><strong>'+escapeHtml(r.seatLabel||'')+'</strong></div>'}).join('')+(all?'':'')}
 function escapeHtml(v){return String(v||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+
+function fillBackstageUsers(users){
+  ['backstageUser','setupUser'].forEach(function(id){
+    var s=document.getElementById(id);s.innerHTML='';
+    (users||[]).forEach(function(u){var o=document.createElement('option');o.value=u.id;o.textContent=u.name+' • '+u.profile+(u.setupRequired?' • primeiro acesso':'');s.appendChild(o)});
+  });
+}
+function openBackstage(){
+  loading(true);
+  api('getBackstageUsers',[]).then(function(r){
+    if(!r.ok)throw new Error(r.message||'Falha ao carregar usuários.');
+    fillBackstageUsers(r.users||[]);
+    show('backstageModal');
+    if(backstageToken) return loadAdminPanel();
+    document.getElementById('backstageLogin').style.display='block';
+    document.getElementById('backstageSetup').style.display='none';
+    document.getElementById('backstagePanel').style.display='none';
+  }).catch(function(e){alert(e.message)}).finally(function(){loading(false)});
+}
+function openV5Setup(){document.getElementById('backstageLogin').style.display='none';document.getElementById('backstageSetup').style.display='block';message('setupMsg','');}
+function backToLogin(){document.getElementById('backstageSetup').style.display='none';document.getElementById('backstageLogin').style.display='block';}
+function setupBackstagePin(){
+  var p={userId:document.getElementById('setupUser').value,setupCode:document.getElementById('setupCode').value,pin:document.getElementById('setupPin').value};
+  loading(true);api('setupBackstagePin',[p]).then(function(r){
+    if(!r.ok){message('setupMsg',r.message||'Não foi possível definir o PIN.',true);return}
+    backstageToken=r.token;localStorage.setItem('meuAssentoV5BackstageToken',backstageToken);loadAdminPanel();
+  }).catch(function(e){message('setupMsg',e.message,true)}).finally(function(){loading(false)});
+}
+function loginBackstage(){
+  var p={userId:document.getElementById('backstageUser').value,pin:document.getElementById('backstagePin').value};
+  loading(true);api('loginBackstage',[p]).then(function(r){
+    if(!r.ok){message('backstageMsg',r.message||'Falha no login.',true);return}
+    backstageToken=r.token;localStorage.setItem('meuAssentoV5BackstageToken',backstageToken);loadAdminPanel();
+  }).catch(function(e){message('backstageMsg',e.message,true)}).finally(function(){loading(false)});
+}
+function loadAdminPanel(){
+  if(!backstageToken)return;
+  loading(true);api('getAdminServices',[backstageToken]).then(function(r){
+    if(!r.ok){backstageToken='';localStorage.removeItem('meuAssentoV5BackstageToken');message('backstageMsg',r.message||'Sessão expirada.',true);return}
+    document.getElementById('backstageLogin').style.display='none';document.getElementById('backstageSetup').style.display='none';document.getElementById('backstagePanel').style.display='block';
+    document.getElementById('backstageWho').textContent=r.user.name+' • '+r.user.profile;
+    renderAdminServices(r.services||[]);
+  }).catch(function(e){alert(e.message)}).finally(function(){loading(false)});
+}
+function renderAdminServices(list){
+  var box=document.getElementById('adminServices');
+  if(!list.length){box.innerHTML='<div class="empty">Nenhum culto cadastrado.</div>';return}
+  box.innerHTML=list.map(function(c){
+    var next=c.status==='Aberto'?'Fechado':'Aberto';
+    var label=c.status==='Aberto'?'Fechar reservas':'Abrir reservas';
+    return '<div class="reservation-row"><div><strong>'+escapeHtml(c.name)+'</strong><div class="muted">'+escapeHtml(c.date+' • '+c.time+' • '+c.status)+'</div></div><button class="btn '+(next==='Aberto'?'btn-primary':'')+'" onclick="setServiceStatus(\''+c.id+'\',\''+next+'\')">'+label+'</button></div>';
+  }).join('');
+}
+function setServiceStatus(id,status){
+  loading(true);api('setServiceStatus',[{token:backstageToken,serviceId:id,status:status}]).then(function(r){
+    if(!r.ok)throw new Error(r.message||'Não foi possível alterar o culto.');
+    return Promise.all([loadAdminPanel(),refreshAll()]);
+  }).catch(function(e){alert(e.message)}).finally(function(){loading(false)});
+}
+function logoutBackstage(){
+  var t=backstageToken;backstageToken='';localStorage.removeItem('meuAssentoV5BackstageToken');
+  api('logoutBackstage',[t]).finally(function(){closeModal('backstageModal')});
+}
+
 window.addEventListener('load',refreshAll);
 </script>
 </body>
