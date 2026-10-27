@@ -171,7 +171,7 @@ select,input{width:100%;border:1px solid #cad4da;border-radius:12px;padding:11px
 var API='https://hqqsymgbepgzxydmgtmd.supabase.co/functions/v1/meu-assento-api';
 var SUPABASE_URL='https://hqqsymgbepgzxydmgtmd.supabase.co';
 var SUPABASE_KEY='sb_publishable_vihLcuNEo1C23w4awZP7zQ_aEjqbeZZ';
-var bootstrap=null,currentService='',seats=[],selectedSeat='',selectedSpecialSeat='',backstageToken=localStorage.getItem('meuAssentoV5BackstageToken')||'',systemConfirmResolver=null;
+var bootstrap=null,currentService='',seats=[],selectedSeat='',selectedSpecialSeat='',selectedLeadershipReservation='',backstageToken=localStorage.getItem('meuAssentoV5BackstageToken')||'',systemConfirmResolver=null;
 function api(method,args){return fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({method:method,args:args||[]})}).then(function(r){if(!r.ok)throw new Error('Falha de comunicação ('+r.status+')');return r.json();});}
 function rpc(fn,body){return fetch(SUPABASE_URL+'/rest/v1/rpc/'+fn,{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY},body:JSON.stringify(body||{})}).then(function(r){if(!r.ok)throw new Error('Falha administrativa ('+r.status+')');return r.json();});}
 function loading(v){document.getElementById('loading').className=v?'loading show':'loading';}
@@ -197,7 +197,20 @@ function loadService(){var s=document.getElementById('service');currentService=s
 function renderStatus(c,can){var e=document.getElementById('status');if(!c){e.innerHTML='';return}e.innerHTML='<span class="chip">'+c.day+' • '+c.date+' • '+c.time+'</span><span class="chip '+(can?'open':'closed')+'">'+(can?'Reservas abertas':'Reservas encerradas')+'</span>'}
 function clearMap(){['row1','row2','row3','leftSide','rightSide'].forEach(function(id){document.getElementById(id).innerHTML=''});document.getElementById('reservations').innerHTML='<div class="empty">Nenhum culto disponível.</div>'}
 function seatById(id){return seats.find(function(x){return String(x.id)===String(id)})}
-function seatButton(id){var s=seatById(id);if(!s)return document.createTextNode('');var b=document.createElement('button');b.className='seat';b.textContent=s.number||'';if(s.state==='Ocupado')b.classList.add('occupied');if(s.state==='Reservado')b.classList.add('special');if(s.state==='Bloqueado fixo')b.classList.add('fixed');b.title=s.stateLabel+(s.displayName?' • '+s.displayName:'');if(!s.occupied&&s.publicReservable&&s.state==='Livre')b.onclick=function(){openReserve(s)};return b}
+function seatButton(id){
+  var s=seatById(id);if(!s)return document.createTextNode('');
+  var b=document.createElement('button');b.className='seat';b.textContent=s.number||'';
+  if(s.state==='Ocupado')b.classList.add('occupied');
+  if(s.state==='Reservado')b.classList.add('special');
+  if(s.state==='Bloqueado fixo')b.classList.add('fixed');
+  b.title=s.stateLabel+(s.displayName?' • '+s.displayName:'');
+  if(backstageToken&&s.state==='Ocupado'&&s.reservationType==='Liderança'&&s.reservationId){
+    b.onclick=function(){selectedLeadershipReservation=s.reservationId;systemConfirm('Cancelar a reserva de '+(s.displayName||'esta liderança')+' no Assento '+String(s.number).padStart(2,'0')+'?',{title:'Cancelar reserva de liderança',okText:'Cancelar reserva'}).then(function(ok){if(ok)cancelLeadershipReservationFromMap()})};
+  }else if(!s.occupied&&s.publicReservable&&s.state==='Livre'){
+    b.onclick=function(){openReserve(s)};
+  }
+  return b
+}
 function renderMap(can){var r1=document.getElementById('row1');r1.innerHTML='';[1,2,3,4].forEach(function(n){r1.appendChild(seatButton(String(n)))});r1.appendChild(seatButton('FIX-BISPO'));var t=document.createElement('div');t.className='table';r1.appendChild(t);r1.appendChild(seatButton('FIX-ACOMP'));[5,6,7,8].forEach(function(n){r1.appendChild(seatButton(String(n)))});
 var r2=document.getElementById('row2');r2.innerHTML='';for(var n=9;n<=19;n++)r2.appendChild(seatButton(String(n)));var r3=document.getElementById('row3');r3.innerHTML='';for(var m=20;m<=30;m++)r3.appendChild(seatButton(String(m)));
 renderSide('leftSide','LE');renderSide('rightSide','LD');document.getElementById('instruction').textContent=can?'Toque em um assento livre para reservar.':'As reservas deste culto estão encerradas.'}
@@ -229,6 +242,14 @@ function renderSide(target,prefix){
     }
     box.appendChild(g);
   }
+}
+function cancelLeadershipReservationFromMap(){
+  if(!selectedLeadershipReservation)return;
+  loading(true);
+  rpc('v5_cancel_reservation',{p_token:backstageToken,p_reservation_id:selectedLeadershipReservation})
+    .then(function(r){if(!r.ok)throw new Error(r.message||'Não foi possível cancelar.');selectedLeadershipReservation='';return refreshAll()})
+    .catch(function(e){alert(e.message)})
+    .finally(function(){loading(false)});
 }
 function openMapSpecial(s){
   if(!backstageToken){alert('Entre no Backstage para criar Reservas Especiais.');return}
