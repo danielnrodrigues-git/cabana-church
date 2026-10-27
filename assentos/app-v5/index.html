@@ -146,9 +146,14 @@ function renderReservations(list,all){var box=document.getElementById('reservati
 function escapeHtml(v){return String(v||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 
 function fillBackstageUsers(users){
+  var ordered=(users||[]).slice().sort(function(a,b){
+    if(a.profile==='Administrador'&&b.profile!=='Administrador')return -1;
+    if(b.profile==='Administrador'&&a.profile!=='Administrador')return 1;
+    return a.name.localeCompare(b.name,'pt-BR');
+  });
   ['backstageUser','setupUser'].forEach(function(id){
     var s=document.getElementById(id);s.innerHTML='';
-    (users||[]).forEach(function(u){var o=document.createElement('option');o.value=u.id;o.textContent=u.name+' • '+u.profile+(u.setupRequired?' • primeiro acesso':'');s.appendChild(o)});
+    ordered.forEach(function(u){var o=document.createElement('option');o.value=u.id;o.textContent=u.name+' • '+u.profile+(u.setupRequired?' • primeiro acesso':'');s.appendChild(o)});
   });
 }
 function openBackstage(){
@@ -163,7 +168,12 @@ function openBackstage(){
     document.getElementById('backstagePanel').style.display='none';
   }).catch(function(e){alert(e.message)}).finally(function(){loading(false)});
 }
-function openV5Setup(){document.getElementById('backstageLogin').style.display='none';document.getElementById('backstageSetup').style.display='block';message('setupMsg','');}
+function openV5Setup(){
+  document.getElementById('setupUser').value=document.getElementById('backstageUser').value;
+  document.getElementById('backstageLogin').style.display='none';
+  document.getElementById('backstageSetup').style.display='block';
+  message('setupMsg','');
+}
 function backToLogin(){document.getElementById('backstageSetup').style.display='none';document.getElementById('backstageLogin').style.display='block';}
 function setupBackstagePin(){
   var p={userId:document.getElementById('setupUser').value,setupCode:document.getElementById('setupCode').value,pin:document.getElementById('setupPin').value};
