@@ -56,8 +56,7 @@ select,input{width:100%;border:1px solid #cad4da;border-radius:12px;padding:11px
   <section class="card" id="mapCard">
     <div id="mapShareBar" style="display:none;margin-bottom:10px">
       <div class="admin-actions">
-        <button class="btn mini" onclick="shareReservationListWhatsApp()">Lista no WhatsApp</button>
-        <button class="btn mini btn-primary" onclick="shareMapImage()">Compartilhar mapa</button>
+        <button class="btn mini btn-primary" onclick="shareMapAndList()">Compartilhar mapa + lista</button>
       </div>
     </div>
     <div class="map">
@@ -472,8 +471,7 @@ function currentServiceLabel(){
   var s=document.getElementById('service');
   return s&&s.selectedIndex>=0?s.options[s.selectedIndex].text:'Culto';
 }
-function shareReservationListWhatsApp(){
-  if(!currentService){return}
+function buildReservationShareText(){
   var occupied=(seats||[]).filter(function(s){return s.occupied});
   var central=occupied.filter(function(s){return s.block==='Central'}).sort(function(a,b){return Number(a.number||999)-Number(b.number||999)});
   var lateral=occupied.filter(function(s){return s.block!=='Central'}).sort(function(a,b){return String(a.id).localeCompare(String(b.id))});
@@ -491,7 +489,32 @@ function shareReservationListWhatsApp(){
     });
   }
   if(!occupied.length)lines.push('Nenhuma reserva registrada.');
-  window.open('https://wa.me/?text='+encodeURIComponent(lines.join('\n')),'_blank','noopener');
+  return lines.join('\n');
+}
+function shareReservationListWhatsApp(){
+  if(!currentService)return;
+  window.open('https://wa.me/?text='+encodeURIComponent(buildReservationShareText()),'_blank','noopener');
+}
+function shareMapAndList(){
+  var target=document.getElementById('mapCard');
+  if(!target||typeof html2canvas!=='function')return;
+  loading(true);
+  html2canvas(target,{backgroundColor:'#ffffff',scale:2,useCORS:true}).then(function(canvas){
+    return new Promise(function(resolve){canvas.toBlob(function(blob){resolve(blob)},'image/png')});
+  }).then(function(blob){
+    if(!blob)return;
+    var file=new File([blob],'meu-assento-mapa.png',{type:'image/png'});
+    var text=buildReservationShareText();
+    if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+      return navigator.share({title:'Meu Assento',text:text,files:[file]});
+    }
+    window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank','noopener');
+    var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='meu-assento-mapa.png';a.click();setTimeout(function(){URL.revokeObjectURL(a.href)},1000);
+    return systemConfirm('Seu navegador não permite enviar imagem e texto juntos automaticamente. Abri a lista no WhatsApp e salvei o mapa em PNG para anexar na mesma conversa.',{title:'Compartilhamento preparado',okText:'OK',cancelText:'Fechar'});
+  }).catch(function(e){
+    if(e&&e.name==='AbortError')return;
+    console.error(e);
+  }).finally(function(){loading(false)});
 }
 function shareMapImage(){
   var target=document.getElementById('mapCard');
