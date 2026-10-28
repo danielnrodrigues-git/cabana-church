@@ -565,6 +565,11 @@ function updateFirstAccessVisibility(){
   btn.style.display=(u&&u.setupRequired)?'inline-block':'none';
 }
 function openBackstage(){
+  if(backstageToken&&backstageUserInfo){
+    show('backstageModal');
+    loadAdminPanel();
+    return;
+  }
   loading(true);
   api('getBackstageUsers',[]).then(function(r){
     if(!r.ok)throw new Error(r.message||'Falha ao carregar usuários.');
@@ -984,7 +989,22 @@ function logoutBackstage(){
     api('logoutBackstage',[t]).finally(function(){closeModal('backstageModal');if(seats&&seats.length)renderMap(false)});
   });
 }
-window.addEventListener('load',refreshAll);
+function restoreBackstageSession(){
+  if(!backstageToken)return Promise.resolve();
+  return rpc('v5_admin_dashboard',{p_token:backstageToken}).then(function(r){
+    if(!r||!r.ok){
+      backstageToken='';backstageUserInfo=null;localStorage.removeItem('meuAssentoV5BackstageToken');
+      renderAdminModeBar();return;
+    }
+    backstageUserInfo=r.user;adminData=r;
+    renderAdminModeBar();
+    if(seats&&seats.length)renderMap(true);
+    loadAutoCloseStatus();
+  }).catch(function(){
+    backstageToken='';backstageUserInfo=null;localStorage.removeItem('meuAssentoV5BackstageToken');renderAdminModeBar();
+  });
+}
+window.addEventListener('load',function(){refreshAll().then(restoreBackstageSession);});
 </script>
 </body>
 </html>
