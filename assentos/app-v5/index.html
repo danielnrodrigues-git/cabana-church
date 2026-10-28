@@ -76,7 +76,7 @@ select,input{width:100%;border:1px solid #cad4da;border-radius:12px;padding:11px
           <div class="auto-close-title">Fechamento automático de reservas</div>
           <div class="auto-close-sub">Fecha as reservas 1 hora antes de cada culto.</div>
         </div>
-        <label class="switch-row"><input type="checkbox" id="autoCloseToggle" onchange="setAutoClose(this.checked)"><span id="autoCloseState" class="auto-close-state">Carregando...</span></label>
+        <div class="admin-actions"><label class="switch-row"><input type="checkbox" id="autoCloseToggle" onchange="setAutoClose(this.checked)"><span id="autoCloseState" class="auto-close-state">Carregando...</span></label><button class="btn mini" onclick="runMaintenanceNow()">Executar agora</button></div>
       </div>
       <div class="auto-close-meta" id="autoCloseMeta"></div>
     </div>
@@ -279,7 +279,7 @@ select,input{width:100%;border:1px solid #cad4da;border-radius:12px;padding:11px
 var API='https://hqqsymgbepgzxydmgtmd.supabase.co/functions/v1/meu-assento-api';
 var SUPABASE_URL='https://hqqsymgbepgzxydmgtmd.supabase.co';
 var SUPABASE_KEY='sb_publishable_vihLcuNEo1C23w4awZP7zQ_aEjqbeZZ';
-var bootstrap=null,currentService='',seats=[],mapCanReserve=false,selectedSeat='',selectedSpecialSeat='',selectedLeadershipReservation='',pendingSeatAfterRegistration='',backstageToken=localStorage.getItem('meuAssentoV5BackstageToken')||'',backstageUserInfo=null,backstageUsers=[],attendanceCurrentRows=[],systemConfirmResolver=null;
+var bootstrap=null,currentService='',seats=[],mapCanReserve=false,selectedSeat='',selectedSpecialSeat='',selectedLeadershipReservation='',pendingSeatAfterRegistration='',backstageToken=localStorage.getItem('meuAssentoV5BackstageToken')||'',backstageUserInfo=null,backstageUsers=[],adminData={services:[],pastServices:[],leaders:[],users:[],audit:[],attendanceReports:{}},attendanceCurrentRows=[],weeklyAttendanceReport=null,monthlyAttendanceReport=null,closedNoticeServiceId='',systemConfirmResolver=null;
 function api(method,args){return fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({method:method,args:args||[]})}).then(function(r){if(!r.ok)throw new Error('Falha de comunicação ('+r.status+')');return r.json();});}
 function rpc(fn,body){return fetch(SUPABASE_URL+'/rest/v1/rpc/'+fn,{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY},body:JSON.stringify(body||{})}).then(function(r){if(!r.ok)throw new Error('Falha administrativa ('+r.status+')');return r.json();});}
 function loading(v){document.getElementById('loading').className=v?'loading show':'loading';}
@@ -301,7 +301,7 @@ function resolveSystemConfirm(value){
 }
 function refreshAll(){loading(true);api('getBootstrap',[]).then(function(b){bootstrap=b;document.getElementById('version').textContent=b.version||'V5.0.0';renderServices();return loadService();}).catch(function(e){alert(e.message)}).finally(function(){loading(false)})}
 function renderServices(){var s=document.getElementById('service');s.innerHTML='';var list=(bootstrap&&bootstrap.cultos)||[];if(!list.length){s.innerHTML='<option value="">Nenhum culto disponível</option>';currentService='';return}list.forEach(function(c){var o=document.createElement('option');o.value=c.id;o.textContent=c.day+' • '+c.date+' • '+c.time+' • '+c.name+' ['+c.status+']';s.appendChild(o)});if(!currentService||!list.some(function(c){return c.id===currentService}))currentService=list[0].id;s.value=currentService}
-function loadService(){var s=document.getElementById('service');currentService=s.value||'';if(!currentService){clearMap();return Promise.resolve()}loading(true);return Promise.all([api('getSeats',[currentService,'']),api('getReservationList',[currentService,''])]).then(function(x){var a=x[0],b=x[1];if(!a.ok)throw new Error(a.message||'Culto indisponível');seats=a.seats||[];renderStatus(a.culto,a.canReserve);renderMap(a.canReserve);renderReservations((b&&b.reservations)||[],false)}).catch(function(e){alert(e.message)}).finally(function(){loading(false)})}
+function loadService(){var s=document.getElementById('service');currentService=s.value||'';if(!currentService){clearMap();return Promise.resolve()}loading(true);return Promise.all([api('getSeats',[currentService,'']),api('getReservationList',[currentService,''])]).then(function(x){var a=x[0],b=x[1];if(!a.ok)throw new Error(a.message||'Culto indisponível');seats=a.seats||[];renderStatus(a.culto,a.canReserve);renderMap(a.canReserve);renderReservations((b&&b.reservations)||[],false);maybeShowClosedReservationsNotice(a.culto)}).catch(function(e){alert(e.message)}).finally(function(){loading(false)})}
 function renderStatus(c,can){var e=document.getElementById('status');if(!c){e.innerHTML='';return}e.innerHTML='<span class="chip">'+c.day+' • '+c.date+' • '+c.time+'</span><span class="chip '+(can?'open':'closed')+'">'+(can?'Reservas abertas':'Reservas encerradas')+'</span>';renderAdminModeBar()}
 function clearMap(){var svg=document.getElementById('seatMap'),empty=document.getElementById('mapEmpty');if(svg){svg.innerHTML='';svg.style.display='none'}if(empty){empty.style.display='block';empty.textContent=backstageToken?'Selecione ou crie um culto para visualizar o mapa.':'Ainda não há culto com reservas abertas.'}document.getElementById('reservations').innerHTML='<div class="empty">Nenhum culto disponível.</div>'}
 function seatById(id){return seats.find(function(x){return String(x.id)===String(id)})}
@@ -504,10 +504,10 @@ function registerLeaderFromReservation(){
   message('registerMsg','');
   show('registerModal');
 }
-function confirmReserve(){var leader=document.getElementById('leaderSelectedId').value;if(!leader){message('reserveMsg','Selecione uma liderança da lista ou faça um novo cadastro.',true);filterLeaderAutocomplete();return}loading(true);api('reserveLeadership',[{cultoId:currentService,seatId:selectedSeat,leaderId:leader,origin:'Próprio',moveExisting:false}]).then(function(r){if(r.ok){closeModal('reserveModal');return refreshAll()}if(r.code==='ALREADY_RESERVED'){
+function confirmReserve(){var leader=document.getElementById('leaderSelectedId').value;if(!leader){message('reserveMsg','Selecione uma liderança da lista ou faça um novo cadastro.',true);filterLeaderAutocomplete();return}loading(true);var reserveCall=backstageToken?rpc('v5_backstage_reserve_leadership',{p_token:backstageToken,p_service_id:currentService,p_seat_id:selectedSeat,p_leader_id:leader,p_move_existing:false}):api('reserveLeadership',[{cultoId:currentService,seatId:selectedSeat,leaderId:leader,origin:'Próprio',moveExisting:false}]);reserveCall.then(function(r){if(r.ok){closeModal('reserveModal');return refreshAll()}if(r.code==='ALREADY_RESERVED'){
   return systemConfirm((r.message||'Você já possui uma reserva.')+' Deseja mover sua reserva para este assento?',{title:'Mover reserva',okText:'Mover reserva'}).then(function(ok){
     if(!ok)return;
-    return api('reserveLeadership',[{cultoId:currentService,seatId:selectedSeat,leaderId:leader,origin:'Próprio',moveExisting:true}]).then(function(x){if(!x.ok)throw new Error(x.message);closeModal('reserveModal');return refreshAll()});
+    var moveCall=backstageToken?rpc('v5_backstage_reserve_leadership',{p_token:backstageToken,p_service_id:currentService,p_seat_id:selectedSeat,p_leader_id:leader,p_move_existing:true}):api('reserveLeadership',[{cultoId:currentService,seatId:selectedSeat,leaderId:leader,origin:'Próprio',moveExisting:true}]);return moveCall.then(function(x){if(!x.ok)throw new Error(x.message);closeModal('reserveModal');return refreshAll()});
   });
 }message('reserveMsg',r.message||'Não foi possível reservar.',true)}).catch(function(e){message('reserveMsg',e.message,true)}).finally(function(){loading(false)})}
 function openRegistration(){message('registerMsg','');show('registerModal')}
@@ -604,13 +604,18 @@ function loadAdminPanel(){
     document.getElementById('backstageLogin').style.display='none';
     document.getElementById('backstageSetup').style.display='none';
     document.getElementById('backstagePanel').style.display='block';
-    backstageUserInfo=r.user;
+    backstageUserInfo=r.user; adminData=r;
     document.getElementById('backstageWho').textContent=r.user.name+' • '+r.user.profile;
+    document.querySelectorAll('.admin-only').forEach(function(x){x.style.display=r.user.profile==='Administrador'?'inline-block':'none'});
     renderAdminModeBar();
     if(seats&&seats.length)renderMap(true);
     renderAdminServices(r.services||[]);
+    renderPastServices(r.pastServices||[]);
     renderAdminLeaders(r.leaders||[]);
     renderAdminUsers(r.users||[]);
+    renderBackstageWhatsAppAdmin();
+    renderAudit(r.audit||[]);
+    initAttendanceReportsAdmin(r.attendanceReports||{});
     fillAdminServiceSelectors(r.services||[]);
     loadAutoCloseStatus();
   }).catch(function(e){alert(e.message)}).finally(function(){loading(false)});
@@ -664,11 +669,25 @@ function renderAdminServices(list){
   box.innerHTML=list.map(function(c){
     var next=c.status==='Aberto'?'Fechado':'Aberto';
     var label=c.status==='Aberto'?'Fechar reservas':'Abrir reservas';
-    return '<div class="admin-item"><div><strong>'+escapeHtml(c.name)+'</strong><div class="muted">'+escapeHtml(c.date+' • '+c.time+' • '+c.status)+'</div></div><div class="admin-actions"><button class="btn mini" onclick="toggleFront(\''+c.id+'\','+(!c.allowPresbyterFirstRow)+')">'+(c.allowPresbyterFirstRow?'Bloquear 01–08 p/ Presbíteros':'Liberar 01–08 p/ Presbíteros')+'</button><button class="btn mini '+(next==='Aberto'?'btn-primary':'')+'" onclick="setServiceStatus(\''+c.id+'\',\''+next+'\')">'+label+'</button></div></div>';
+    var admin=backstageUserInfo&&backstageUserInfo.profile==='Administrador';
+    return '<div class="admin-card"><div><h3>'+escapeHtml(c.name)+'</h3><p>'+escapeHtml(c.date+' • '+c.time+' • '+c.type+' • '+c.status)+'</p></div>'+
+      '<div class="admin-actions">'+
+      '<button class="btn mini" onclick="toggleFront(\''+c.id+'\','+(!c.allowPresbyterFirstRow)+')">'+(c.allowPresbyterFirstRow?'Bloquear 01–08 p/ Presbíteros':'Liberar 01–08 p/ Presbíteros')+'</button>'+
+      '<button class="btn mini '+(next==='Aberto'?'btn-primary':'')+'" onclick="setServiceStatus(\''+c.id+'\',\''+next+'\')">'+label+'</button>'+
+      (c.type==='Especial'?'<button class="btn mini" onclick="openServiceEditor(\''+c.id+'\')">Editar</button>':'')+
+      '<button class="btn mini" onclick="finalizeService(\''+c.id+'\')">Finalizar</button>'+
+      (admin?'<button class="btn mini" onclick="archiveService(\''+c.id+'\')">Arquivar</button><button class="btn mini" onclick="deleteService(\''+c.id+'\')">Excluir</button>':'')+
+      '</div></div>';
   }).join('');
 }
+function renderPastServices(list){
+  var box=document.getElementById('pastServices');box.className='admin-list';
+  box.innerHTML=(list||[]).map(function(c){
+    return '<div class="admin-card"><h3>'+escapeHtml(c.name)+'</h3><p>'+escapeHtml(c.date+' • '+c.time+' • '+c.type+' • '+c.status)+'</p><p>Consulta histórica — sem novas reservas.</p><div class="admin-actions"><button class="btn mini btn-primary" onclick="openPastReservations(\''+c.id+'\')">Ver reservas</button></div></div>';
+  }).join('')||'<div class="empty">Nenhum culto anterior disponível para consulta.</div>';
+}
 function fillAdminServiceSelectors(list){
-  ['specialService','attendanceService'].forEach(function(id){
+  ['specialService'].forEach(function(id){
     var s=document.getElementById(id);s.innerHTML='';
     (list||[]).forEach(function(c){var o=document.createElement('option');o.value=c.id;o.textContent=c.date+' • '+c.time+' • '+c.name+' • '+c.status;s.appendChild(o)});
   });
@@ -686,21 +705,122 @@ function toggleFront(id,enabled){
   }).catch(function(e){alert(e.message)}).finally(function(){loading(false)});
 }
 function renderAdminLeaders(list){
+  var q=normalizeText((document.getElementById('adminLeaderSearch')||{}).value||'');
+  var arr=(list||[]).filter(function(l){return !q||normalizeText(l.displayName).indexOf(q)>=0||normalizeText(l.title).indexOf(q)>=0});
   var box=document.getElementById('adminLeaders');box.className='admin-list';
-  box.innerHTML=(list||[]).map(function(l){
-    return '<div class="admin-item"><div><strong>'+escapeHtml(l.displayName)+'</strong><div class="muted">'+escapeHtml(l.title)+' • '+(l.active?'Ativa':'Inativa')+'</div></div><div class="admin-actions"><button class="btn mini" onclick="setLeaderActive(\''+l.id+'\','+(!l.active)+')">'+(l.active?'Inativar':'Ativar')+'</button></div></div>';
+  box.innerHTML=arr.map(function(l){
+    var admin=backstageUserInfo&&backstageUserInfo.profile==='Administrador';
+    return '<div class="admin-item"><div><strong>'+escapeHtml(l.displayName)+'</strong><div class="muted">'+escapeHtml(l.title)+' • '+(l.active?'Ativa':'Inativa')+'</div></div><div class="admin-actions"><button class="btn mini" onclick="openLeaderEditor(\''+l.id+'\')">Editar</button><button class="btn mini" onclick="setLeaderActive(\''+l.id+'\','+(!l.active)+')">'+(l.active?'Inativar':'Ativar')+'</button>'+(admin?'<button class="btn mini" onclick="deleteLeader(\''+l.id+'\')">Excluir</button>':'')+'</div></div>';
   }).join('')||'<div class="empty">Nenhuma liderança.</div>';
 }
 function setLeaderActive(id,active){
   loading(true);rpc('v5_set_leader_active',{p_token:backstageToken,p_leader_id:id,p_active:active}).then(function(r){
-    if(!r.ok)throw new Error(r.message||'Não foi possível alterar a liderança.');
-    return Promise.all([loadAdminPanel(),refreshAll()]);
+    if(!r.ok)throw new Error(r.message||'Não foi possível alterar a liderança.');return Promise.all([loadAdminPanel(),refreshAll()]);
   }).catch(function(e){alert(e.message)}).finally(function(){loading(false)});
 }
 function renderAdminUsers(list){
   var box=document.getElementById('adminUsers');box.className='admin-list';
-  box.innerHTML=(list||[]).map(function(u){return '<div class="admin-item"><div><strong>'+escapeHtml(u.name)+'</strong><div class="muted">'+escapeHtml(u.profile)+' • '+(u.active?'Ativo':'Inativo')+(u.setupRequired?' • primeiro acesso pendente':'')+'</div></div></div>'}).join('')||'<div class="empty">Nenhum usuário.</div>';
+  box.innerHTML=(list||[]).map(function(u){
+    return '<div class="admin-item"><div><strong>'+escapeHtml(u.name)+'</strong><div class="muted">'+escapeHtml(u.profile)+' • '+(u.active?'Ativo':'Inativo')+(u.setupRequired?' • primeiro acesso pendente':'')+'</div></div><div class="admin-actions"><button class="btn mini" onclick="openUserEditor(\''+u.id+'\')">Editar</button><button class="btn mini" onclick="setUserActive(\''+u.id+'\','+(!u.active)+')">'+(u.active?'Inativar':'Ativar')+'</button><button class="btn mini" onclick="resetUserSetup(\''+u.id+'\')">Redefinir PIN</button></div></div>';
+  }).join('')||'<div class="empty">Nenhum usuário.</div>';
 }
+function runMaintenanceNow(){
+  loading(true);rpc('v5_run_maintenance_now',{p_token:backstageToken}).then(function(r){if(!r.ok)throw new Error(r.message);return Promise.all([loadAutoCloseStatus(),loadAdminPanel(),refreshAll()])}).catch(function(e){alert(e.message)}).finally(function(){loading(false)});
+}
+function maybeShowClosedReservationsNotice(c){
+  if(backstageToken||!c||!c.reservationsClosed)return;
+  if(closedNoticeServiceId===c.id)return;
+  closedNoticeServiceId=c.id;openClosedReservationsNotice(c);
+}
+function openClosedReservationsNotice(c){
+  c=c||((bootstrap&&bootstrap.cultos)||[]).find(function(x){return x.id===currentService}); if(!c)return;
+  document.getElementById('closedReservationsSubtitle').textContent=c.name+' • '+c.date+' • '+c.time;
+  var btn=document.getElementById('closedReservationsWhatsAppBtn'),copy=document.getElementById('closedReservationsCopy');
+  var contact=(bootstrap&&bootstrap.backstageWhatsApp)||{};
+  if(typeof contact==='string'&&contact){contact={number:contact,displayNumber:contact}}
+  if(contact.number){
+    var msg='Olá! Preciso de ajuda com minha reserva no '+c.name+' de '+c.date+' às '+c.time+'. Gostaria de solicitar uma movimentação ou cancelamento.';
+    btn.href='https://wa.me/'+contact.number+'?text='+encodeURIComponent(msg);btn.style.display='inline-flex';
+    copy.textContent='Para movimentações e/ou cancelamento da sua reserva, entre em contato com o líder do Backstage pelo WhatsApp.';
+  }else{
+    btn.style.display='none';copy.textContent='Para movimentações e/ou cancelamento da sua reserva, entre em contato com o líder do Backstage.';
+  }
+  show('closedReservationsModal');
+}
+function renderBackstageWhatsAppAdmin(){
+  var contact=adminData.backstageWhatsApp||{};if(typeof contact==='string')contact={number:contact,displayNumber:contact};
+  document.getElementById('backstageWhatsAppInput').value=contact.displayNumber||'';
+  document.getElementById('backstageWhatsAppPreview').textContent=contact.displayNumber?'Número atual: '+contact.displayNumber:'Nenhum número cadastrado.';
+}
+function formatBackstagePhoneInput(input){
+  var d=String(input.value||'').replace(/\D/g,'').slice(0,11);
+  if(d.length<=2)input.value=d?'('+d:'';
+  else if(d.length<=6)input.value='('+d.slice(0,2)+') '+d.slice(2);
+  else if(d.length<=10)input.value='('+d.slice(0,2)+') '+d.slice(2,6)+'-'+d.slice(6);
+  else input.value='('+d.slice(0,2)+') '+d.slice(2,7)+'-'+d.slice(7);
+}
+function saveBackstageWhatsAppAdmin(){
+  loading(true);rpc('v5_save_backstage_whatsapp',{p_token:backstageToken,p_number:document.getElementById('backstageWhatsAppInput').value}).then(function(r){if(!r.ok)throw new Error(r.message);return Promise.all([loadAdminPanel(),refreshAll()])}).catch(function(e){alert(e.message)}).finally(function(){loading(false)});
+}
+function openServiceEditor(id){
+  var c=(adminData.services||[]).find(function(x){return x.id===id});
+  document.getElementById('serviceEditId').value=c?c.id:'';
+  document.getElementById('serviceEditName').value=c?c.name:'';
+  document.getElementById('serviceEditDate').value=c?c.isoDate:'';
+  document.getElementById('serviceEditTime').value=c?c.time:'';
+  document.getElementById('serviceEditNotes').value=c?(c.notes||''):'';
+  document.getElementById('serviceEditorTitle').textContent=c?'Editar culto':'Novo culto especial';show('serviceEditorModal');
+}
+function saveServiceEditor(){
+  loading(true);rpc('v5_save_service',{p_token:backstageToken,p_service_id:document.getElementById('serviceEditId').value||null,p_name:document.getElementById('serviceEditName').value,p_date:document.getElementById('serviceEditDate').value||null,p_time:document.getElementById('serviceEditTime').value||null,p_notes:document.getElementById('serviceEditNotes').value}).then(function(r){if(!r.ok)throw new Error(r.message);closeModal('serviceEditorModal');return Promise.all([loadAdminPanel(),refreshAll()])}).catch(function(e){alert(e.message)}).finally(function(){loading(false)});
+}
+function finalizeService(id){systemConfirm('Finalizar este culto e preservar o histórico?',{title:'Finalizar culto',okText:'Finalizar'}).then(function(ok){if(!ok)return;loading(true);rpc('v5_finalize_service',{p_token:backstageToken,p_service_id:id}).then(function(r){if(!r.ok)throw new Error(r.message);return Promise.all([loadAdminPanel(),refreshAll()])}).catch(function(e){alert(e.message)}).finally(function(){loading(false)})})}
+function archiveService(id){systemConfirm('Arquivar este culto?',{title:'Arquivar culto',okText:'Arquivar'}).then(function(ok){if(!ok)return;loading(true);rpc('v5_archive_service',{p_token:backstageToken,p_service_id:id}).then(function(r){if(!r.ok)throw new Error(r.message);return loadAdminPanel()}).catch(function(e){alert(e.message)}).finally(function(){loading(false)})})}
+function deleteService(id){systemConfirm('Excluir este culto? O histórico das reservas será preservado.',{title:'Excluir culto',okText:'Excluir'}).then(function(ok){if(!ok)return;loading(true);rpc('v5_delete_service',{p_token:backstageToken,p_service_id:id}).then(function(r){if(!r.ok)throw new Error(r.message);return Promise.all([loadAdminPanel(),refreshAll()])}).catch(function(e){alert(e.message)}).finally(function(){loading(false)})})}
+function openPastReservations(id){
+  loading(true);rpc('v5_past_reservations',{p_token:backstageToken,p_service_id:id}).then(function(r){if(!r.ok)throw new Error(r.message);document.getElementById('pastReservationsSubtitle').textContent=r.service.name+' • '+r.service.date+' • '+r.service.time+' • Consulta';document.getElementById('pastReservationsRows').innerHTML=(r.reservations||[]).map(function(x){return '<div class="reservation-row"><div class="reservation-seat">'+escapeHtml(String(x.seatLabel||'').replace(/[^0-9]/g,'')||'•')+'</div><div class="reservation-info"><strong>'+escapeHtml(x.displayName||'')+'</strong><div class="muted">'+escapeHtml(x.title||x.type||'')+'</div></div></div>'}).join('')||'<div class="empty">Nenhuma reserva.</div>';show('pastReservationsModal')}).catch(function(e){alert(e.message)}).finally(function(){loading(false)});
+}
+function openLeaderEditor(id){
+  var l=(adminData.leaders||[]).find(function(x){return x.id===id});
+  document.getElementById('leaderEditId').value=l?l.id:'';
+  document.getElementById('leaderEditFirstName').value=l?l.firstName:'';
+  document.getElementById('leaderEditLastName').value=l?l.lastName:'';
+  document.getElementById('leaderEditTitle').value=l?l.title:'Pastor';
+  document.getElementById('leaderEditNotes').value=l?(l.notes||''):'';
+  document.getElementById('leaderEditorTitle').textContent=l?'Editar liderança':'Nova liderança';show('leaderEditorModal');
+}
+function saveLeaderEditor(){
+  loading(true);rpc('v5_save_leader',{p_token:backstageToken,p_leader_id:document.getElementById('leaderEditId').value||null,p_first_name:document.getElementById('leaderEditFirstName').value,p_last_name:document.getElementById('leaderEditLastName').value,p_title:document.getElementById('leaderEditTitle').value,p_notes:document.getElementById('leaderEditNotes').value}).then(function(r){if(!r.ok)throw new Error(r.message);closeModal('leaderEditorModal');return Promise.all([loadAdminPanel(),refreshAll()])}).catch(function(e){alert(e.message)}).finally(function(){loading(false)});
+}
+function deleteLeader(id){systemConfirm('Excluir esta liderança? As reservas históricas serão preservadas.',{title:'Excluir liderança',okText:'Excluir'}).then(function(ok){if(!ok)return;loading(true);rpc('v5_delete_leader',{p_token:backstageToken,p_leader_id:id}).then(function(r){if(!r.ok)throw new Error(r.message);return Promise.all([loadAdminPanel(),refreshAll()])}).catch(function(e){alert(e.message)}).finally(function(){loading(false)})})}
+function openUserEditor(id){
+  var u=(adminData.users||[]).find(function(x){return x.id===id});document.getElementById('userEditId').value=u?u.id:'';document.getElementById('userEditName').value=u?u.name:'';document.getElementById('userEditProfile').value=u?u.profile:'Backstage';document.getElementById('userEditorTitle').textContent=u?'Editar usuário':'Novo usuário Backstage';show('userEditorModal');
+}
+function saveUserEditor(){
+  loading(true);rpc('v5_save_user',{p_token:backstageToken,p_user_id:document.getElementById('userEditId').value||null,p_name:document.getElementById('userEditName').value,p_profile:document.getElementById('userEditProfile').value}).then(function(r){if(!r.ok)throw new Error(r.message);closeModal('userEditorModal');if(r.setupCode){document.getElementById('setupCodeValue').textContent=r.setupCode;show('setupCodeModal')}return loadAdminPanel()}).catch(function(e){alert(e.message)}).finally(function(){loading(false)});
+}
+function setUserActive(id,active){loading(true);rpc('v5_set_user_active',{p_token:backstageToken,p_user_id:id,p_active:active}).then(function(r){if(!r.ok)throw new Error(r.message);return loadAdminPanel()}).catch(function(e){alert(e.message)}).finally(function(){loading(false)})}
+function resetUserSetup(id){systemConfirm('Redefinir o PIN deste usuário? O acesso atual será encerrado.',{title:'Redefinir PIN',okText:'Redefinir'}).then(function(ok){if(!ok)return;loading(true);rpc('v5_reset_user_setup',{p_token:backstageToken,p_user_id:id}).then(function(r){if(!r.ok)throw new Error(r.message);document.getElementById('setupCodeValue').textContent=r.setupCode;show('setupCodeModal');return loadAdminPanel()}).catch(function(e){alert(e.message)}).finally(function(){loading(false)})})}
+function renderAudit(list){var box=document.getElementById('auditRows');box.innerHTML=(list||[]).map(function(a){return '<div class="audit-row"><strong>'+escapeHtml(a.action)+' • '+escapeHtml(a.entity)+'</strong><span class="muted">'+escapeHtml(formatLocalDateTime(a.at))+' • '+escapeHtml(a.operator)+(a.notes?' • '+escapeHtml(a.notes):'')+'</span></div>'}).join('')||'<div class="empty">Sem registros de auditoria.</div>'}
+function initAttendanceReportsAdmin(data){
+  var ws=document.getElementById('attendanceWeekSelect'),ms=document.getElementById('attendanceMonthSelect');ws.innerHTML='';ms.innerHTML='';
+  (data.weeks||[]).forEach(function(w){var o=document.createElement('option');o.value=w.key;o.textContent=w.label;ws.appendChild(o)});
+  (data.months||[]).forEach(function(m){var o=document.createElement('option');o.value=m.key;o.textContent=m.label;ms.appendChild(o)});
+}
+function loadWeeklyAttendanceReport(){
+  var key=document.getElementById('attendanceWeekSelect').value;if(!key)return;loading(true);rpc('v5_weekly_attendance',{p_token:backstageToken,p_week_key:key}).then(function(r){if(!r.ok)throw new Error(r.message);weeklyAttendanceReport=r;renderWeeklyAttendanceReport()}).catch(function(e){alert(e.message)}).finally(function(){loading(false)});
+}
+function renderWeeklyAttendanceReport(){
+  var r=weeklyAttendanceReport,box=document.getElementById('weeklyAttendanceTable'),sum=document.getElementById('weeklyAttendanceSummary');if(!r)return;
+  sum.innerHTML='<span class="chip">'+escapeHtml(r.label)+'</span><span class="chip">'+(r.services||[]).length+' cultos</span>';
+  var h='<div class="attendance-table-wrap"><table class="attendance-table"><thead><tr><th>Liderança</th>';(r.services||[]).forEach(function(s){h+='<th>'+escapeHtml(s.date)+'<br>'+escapeHtml(s.time)+'</th>'});h+='<th>Semana</th></tr></thead><tbody>';
+  (r.rows||[]).forEach(function(row){h+='<tr><td><strong>'+escapeHtml(row.displayName)+'</strong><br><span class="muted">'+escapeHtml(row.title)+'</span></td>';(row.cells||[]).forEach(function(cell){if(!cell.eligible){h+='<td><button class="attendance-toggle na" disabled>—</button></td>'}else{h+='<td><button class="attendance-toggle '+(cell.present?'present':'absent')+'" onclick="toggleWeeklyAttendance(\''+row.leaderId+'\',\''+cell.serviceId+'\',\''+(cell.present?'Ausente':'Presente')+'\')">'+(cell.present?'Presente':'Ausente')+'</button></td>'}});h+='<td><strong>'+row.presentCount+'/'+row.eligibleCount+'</strong><br><span class="muted">'+row.percentage+'%</span></td></tr>'});h+='</tbody></table></div>';box.innerHTML=h;document.getElementById('weeklyAttendancePdfBtn').disabled=false;
+}
+function toggleWeeklyAttendance(leaderId,serviceId,status){loading(true);rpc('v5_set_attendance',{p_token:backstageToken,p_service_id:serviceId,p_leader_id:leaderId,p_status:status}).then(function(r){if(!r.ok)throw new Error(r.message);return loadWeeklyAttendanceReport()}).catch(function(e){alert(e.message)}).finally(function(){loading(false)})}
+function loadMonthlyAttendanceRanking(){var key=document.getElementById('attendanceMonthSelect').value;if(!key)return;loading(true);rpc('v5_monthly_attendance',{p_token:backstageToken,p_month_key:key}).then(function(r){if(!r.ok)throw new Error(r.message);monthlyAttendanceReport=r;renderMonthlyAttendanceRanking()}).catch(function(e){alert(e.message)}).finally(function(){loading(false)})}
+function renderMonthlyAttendanceRanking(){var r=monthlyAttendanceReport,box=document.getElementById('monthlyAttendanceTable'),sum=document.getElementById('monthlyAttendanceSummary');if(!r)return;sum.innerHTML='<span class="chip">'+escapeHtml(r.label)+'</span><span class="chip">'+r.servicesCount+' cultos</span>';var h='<div class="attendance-table-wrap"><table class="attendance-table"><thead><tr><th>#</th><th>Liderança</th><th>Presenças</th><th>Ausências</th><th>Elegíveis</th><th>Frequência</th></tr></thead><tbody>';(r.rows||[]).forEach(function(x,i){h+='<tr><td>'+(i+1)+'</td><td><strong>'+escapeHtml(x.displayName)+'</strong><br><span class="muted">'+escapeHtml(x.title)+'</span></td><td>'+x.presentCount+'</td><td>'+x.absentCount+'</td><td>'+x.eligibleCount+'</td><td><strong>'+x.percentage+'%</strong></td></tr>'});h+='</tbody></table></div>';box.innerHTML=h;document.getElementById('monthlyAttendancePdfBtn').disabled=false}
+function exportWeeklyAttendancePdf(){if(!weeklyAttendanceReport||!window.jspdf||!window.jspdf.jsPDF)return;var r=weeklyAttendanceReport,doc=new window.jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a4'});doc.setFontSize(16);doc.text('Cabana Church | Relatório Semanal de Presença',14,15);doc.setFontSize(10);doc.text('Semana: '+r.label,14,22);var head=[['Liderança'].concat((r.services||[]).map(function(s){return s.date+' '+s.time})).concat(['Semana'])];var body=(r.rows||[]).map(function(x){return [x.displayName].concat((x.cells||[]).map(function(c){return !c.eligible?'—':(c.present?'PRESENTE':'AUSENTE')})).concat([x.presentCount+'/'+x.eligibleCount+' ('+x.percentage+'%)'])});if(doc.autoTable)doc.autoTable({startY:28,head:head,body:body,styles:{fontSize:7}});doc.save('Presenca_Semanal_'+r.weekKey+'.pdf')}
+function exportMonthlyAttendancePdf(){if(!monthlyAttendanceReport||!window.jspdf||!window.jspdf.jsPDF)return;var r=monthlyAttendanceReport,doc=new window.jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a4'});doc.setFontSize(16);doc.text('Cabana Church | Ranking Mensal de Presença',14,15);doc.setFontSize(10);doc.text(r.label+' • '+r.servicesCount+' cultos',14,22);var body=(r.rows||[]).map(function(x,i){return [String(i+1),x.displayName,x.title,String(x.presentCount),String(x.absentCount),String(x.eligibleCount),x.percentage+'%']});if(doc.autoTable)doc.autoTable({startY:28,head:[['#','Liderança','Título','Presenças','Ausências','Elegíveis','Frequência']],body:body,styles:{fontSize:8}});doc.save('Ranking_Presenca_'+r.monthKey+'.pdf')}
 function loadSpecialSeats(){
   var serviceId=document.getElementById('specialService').value;if(!serviceId)return;
   loading(true);rpc('v5_admin_seats',{p_token:backstageToken,p_service_id:serviceId}).then(function(r){
