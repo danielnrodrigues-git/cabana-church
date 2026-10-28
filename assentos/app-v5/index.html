@@ -614,15 +614,34 @@ function setupBackstagePin(){
   var p={userId:document.getElementById('setupUser').value,setupCode:document.getElementById('setupCode').value,pin:document.getElementById('setupPin').value};
   loading(true);api('setupBackstagePin',[p]).then(function(r){
     if(!r.ok){message('setupMsg',r.message||'Não foi possível definir o PIN.',true);return}
-    backstageToken=r.token;localStorage.setItem('meuAssentoV5BackstageToken',backstageToken);loadAdminPanel();
+    backstageToken=r.token;localStorage.setItem('meuAssentoV5BackstageToken',backstageToken);enterBackstageMain();
   }).catch(function(e){message('setupMsg',e.message,true)}).finally(function(){loading(false)});
 }
 function loginBackstage(){
   var p={userId:document.getElementById('backstageUser').value,pin:document.getElementById('backstagePin').value};
   loading(true);api('loginBackstage',[p]).then(function(r){
     if(!r.ok){message('backstageMsg',r.message||'Falha no login.',true);return}
-    backstageToken=r.token;localStorage.setItem('meuAssentoV5BackstageToken',backstageToken);loadAdminPanel();
+    backstageToken=r.token;localStorage.setItem('meuAssentoV5BackstageToken',backstageToken);enterBackstageMain();
   }).catch(function(e){message('backstageMsg',e.message,true)}).finally(function(){loading(false)});
+}
+function enterBackstageMain(){
+  if(!backstageToken)return;
+  loading(true);
+  rpc('v5_admin_dashboard',{p_token:backstageToken}).then(function(r){
+    if(!r.ok)throw new Error(r.message||'Não foi possível iniciar o Backstage.');
+    backstageUserInfo=r.user;
+    adminData=r;
+    renderBackstageMainServices();
+    renderAdminModeBar();
+    closeModal('backstageModal');
+    return loadService();
+  }).catch(function(e){
+    backstageToken='';
+    backstageUserInfo=null;
+    localStorage.removeItem('meuAssentoV5BackstageToken');
+    message('backstageMsg',e.message||'Falha ao entrar no Backstage.',true);
+    show('backstageModal');
+  }).finally(function(){loading(false)});
 }
 function loadAdminPanel(){
   if(!backstageToken)return;
