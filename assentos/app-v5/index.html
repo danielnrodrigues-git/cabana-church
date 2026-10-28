@@ -301,7 +301,29 @@ function resolveSystemConfirm(value){
 }
 function refreshAll(){loading(true);api('getBootstrap',[]).then(function(b){bootstrap=b;document.getElementById('version').textContent=b.version||'V5.0.0';renderServices();return loadService();}).catch(function(e){alert(e.message)}).finally(function(){loading(false)})}
 function renderServices(){var s=document.getElementById('service');s.innerHTML='';var list=(bootstrap&&bootstrap.cultos)||[];if(!list.length){s.innerHTML='<option value="">Nenhum culto disponível</option>';currentService='';return}list.forEach(function(c){var o=document.createElement('option');o.value=c.id;o.textContent=c.day+' • '+c.date+' • '+c.time+' • '+c.name+' ['+c.status+']';s.appendChild(o)});if(!currentService||!list.some(function(c){return c.id===currentService}))currentService=list[0].id;s.value=currentService}
-function loadService(){var s=document.getElementById('service');currentService=s.value||'';if(!currentService){clearMap();return Promise.resolve()}loading(true);return Promise.all([api('getSeats',[currentService,'']),api('getReservationList',[currentService,''])]).then(function(x){var a=x[0],b=x[1];if(!a.ok)throw new Error(a.message||'Culto indisponível');seats=a.seats||[];renderStatus(a.culto,a.canReserve);renderMap(a.canReserve);renderReservations((b&&b.reservations)||[],false);maybeShowClosedReservationsNotice(a.culto)}).catch(function(e){alert(e.message)}).finally(function(){loading(false)})}
+function loadService(){
+  var s=document.getElementById('service');currentService=s.value||'';
+  if(!currentService){clearMap();return Promise.resolve()}
+  loading(true);
+  if(backstageToken&&backstageUserInfo){
+    return Promise.all([
+      rpc('v5_admin_seats',{p_token:backstageToken,p_service_id:currentService}),
+      api('getReservationList',[currentService,''])
+    ]).then(function(x){
+      var a=x[0],b=x[1];if(!a.ok)throw new Error(a.message||'Culto indisponível');
+      seats=a.seats||[];
+      var c=a.service||{};
+      var canOperate=!['Finalizado','Arquivado','Excluído'].includes(c.status);
+      renderStatus(c,canOperate);
+      renderMap(canOperate);
+      renderReservations((b&&b.reservations)||[],false);
+    }).catch(function(e){alert(e.message)}).finally(function(){loading(false)});
+  }
+  return Promise.all([api('getSeats',[currentService,'']),api('getReservationList',[currentService,''])]).then(function(x){
+    var a=x[0],b=x[1];if(!a.ok)throw new Error(a.message||'Culto indisponível');
+    seats=a.seats||[];renderStatus(a.culto,a.canReserve);renderMap(a.canReserve);renderReservations((b&&b.reservations)||[],false);maybeShowClosedReservationsNotice(a.culto)
+  }).catch(function(e){alert(e.message)}).finally(function(){loading(false)});
+}
 function renderStatus(c,can){var e=document.getElementById('status');if(!c){e.innerHTML='';return}e.innerHTML='<span class="chip">'+c.day+' • '+c.date+' • '+c.time+'</span><span class="chip '+(can?'open':'closed')+'">'+(can?'Reservas abertas':'Reservas encerradas')+'</span>';renderAdminModeBar()}
 function clearMap(){var svg=document.getElementById('seatMap'),empty=document.getElementById('mapEmpty');if(svg){svg.innerHTML='';svg.style.display='none'}if(empty){empty.style.display='block';empty.textContent=backstageToken?'Selecione ou crie um culto para visualizar o mapa.':'Ainda não há culto com reservas abertas.'}document.getElementById('reservations').innerHTML='<div class="empty">Nenhum culto disponível.</div>'}
 function seatById(id){return seats.find(function(x){return String(x.id)===String(id)})}
@@ -610,6 +632,7 @@ function loadAdminPanel(){
     document.getElementById('backstageSetup').style.display='none';
     document.getElementById('backstagePanel').style.display='block';
     backstageUserInfo=r.user; adminData=r;
+    renderBackstageMainServices();
     document.getElementById('backstageWho').textContent=r.user.name+' • '+r.user.profile;
     document.querySelectorAll('.admin-only').forEach(function(x){x.style.display=r.user.profile==='Administrador'?'inline-block':'none'});
     renderAdminModeBar();
@@ -623,7 +646,22 @@ function loadAdminPanel(){
     initAttendanceReportsAdmin(r.attendanceReports||{});
     fillAdminServiceSelectors(r.services||[]);
     loadAutoCloseStatus();
+    loadService();
   }).catch(function(e){alert(e.message)}).finally(function(){loading(false)});
+}
+function renderBackstageMainServices(){
+  var s=document.getElementById('service');if(!s)return;
+  var list=(adminData&&adminData.services)||[];
+  if(!list.length)return;
+  var prev=currentService||s.value||'';
+  s.innerHTML='';
+  list.forEach(function(c){
+    var o=document.createElement('option');o.value=c.id;
+    o.textContent=c.date+' • '+c.time+' • '+c.name+' ['+c.status+']';
+    s.appendChild(o);
+  });
+  if(list.some(function(c){return c.id===prev}))currentService=prev;else currentService=list[0].id;
+  s.value=currentService;
 }
 function formatLocalDateTime(v){
   if(!v)return '—';
@@ -958,9 +996,10 @@ function restoreBackstageSession(){
       renderAdminModeBar();return;
     }
     backstageUserInfo=r.user;adminData=r;
+    renderBackstageMainServices();
     renderAdminModeBar();
-    if(seats&&seats.length)renderMap(true);
     loadAutoCloseStatus();
+    return loadService();
   }).catch(function(){
     backstageToken='';backstageUserInfo=null;localStorage.removeItem('meuAssentoV5BackstageToken');renderAdminModeBar();
   });
