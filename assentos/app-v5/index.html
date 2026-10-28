@@ -39,6 +39,19 @@ select,input{width:100%;border:1px solid #cad4da;border-radius:12px;padding:11px
 .seat-svg{transition:.15s ease;transform-box:fill-box;transform-origin:center}
 .seat-svg.clickable:hover{filter:brightness(.95);transform:translateY(-2px)}
 @media(max-width:620px){#seatMap{min-height:0}.map-card{padding:8px 6px 12px}.legend{gap:8px;font-size:10px}.legend-color{width:12px;height:12px}}
+
+.admin-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.admin-card{border:1px solid #e2e8ec;border-radius:14px;padding:12px;margin:9px 0;background:#fff}
+.admin-card h3{margin:0 0 3px;font-size:14px}.admin-card p{margin:2px 0;color:var(--muted);font-size:12px}
+.settings-card,.report-card{border:1px solid #e0e7ea;border-radius:14px;padding:14px;background:#fafdfe;margin-bottom:12px}
+.settings-card h3,.report-card h3{margin:0 0 6px}.settings-card p,.report-card p{font-size:12px;color:var(--muted)}
+.report-toolbar{display:flex;align-items:end;gap:8px;flex-wrap:wrap}.report-toolbar .form-row{min-width:190px;flex:1}
+.report-summary{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}.attendance-table-wrap{overflow:auto;border:1px solid #e2e8ec;border-radius:12px}
+.attendance-table{border-collapse:collapse;width:100%;min-width:680px;font-size:11px}.attendance-table th,.attendance-table td{border-bottom:1px solid #edf1f3;padding:7px;text-align:center}.attendance-table th:first-child,.attendance-table td:first-child{text-align:left}
+.attendance-toggle{border:1px solid #d5dde2;border-radius:8px;padding:5px 7px;font-size:10px;font-weight:800;cursor:pointer}.attendance-toggle.present{background:#e7f8f2;color:#14765d}.attendance-toggle.absent{background:#fff0f0;color:#a43e3e}.attendance-toggle.na{background:#f3f5f6;color:#9aa3aa}
+.audit-row{padding:9px 0;border-bottom:1px solid #edf1f3;font-size:12px}.audit-row strong{display:block}
+.setup-code-box{font-size:24px;font-weight:900;letter-spacing:3px;text-align:center;background:#eefafa;border-radius:12px;padding:16px;margin:12px 0;color:#126f77}
+.closed-notice-icon{text-align:center;font-size:42px;margin:8px}.closed-notice-copy{text-align:center;color:var(--muted);line-height:1.5}
 </style>
 <script src="https://unpkg.com/jspdf@4.2.1/dist/jspdf.umd.min.js"></script>
 <script src="https://unpkg.com/jspdf-autotable@5.0.9/dist/jspdf.plugin.autotable.min.js"></script>
@@ -135,14 +148,23 @@ select,input{width:100%;border:1px solid #cad4da;border-radius:12px;padding:11px
     <div class="msg show" id="backstageWho"></div>
     <div class="admin-tabs">
       <button class="admin-tab active" data-tab="cultos" onclick="showAdminTab('cultos',this)">Cultos</button>
+      <button class="admin-tab" data-tab="past" onclick="showAdminTab('past',this)">Cultos Anteriores</button>
       <button class="admin-tab" data-tab="reservas" onclick="showAdminTab('reservas',this)">Reservas Especiais</button>
       <button class="admin-tab" data-tab="liderancas" onclick="showAdminTab('liderancas',this)">Lideranças</button>
-      <button class="admin-tab" data-tab="usuarios" onclick="showAdminTab('usuarios',this)">Usuários</button>
-      <button class="admin-tab" data-tab="presenca" onclick="showAdminTab('presenca',this)">Presença</button>
+      <button class="admin-tab admin-only" data-tab="usuarios" onclick="showAdminTab('usuarios',this)">Usuários Backstage</button>
+      <button class="admin-tab admin-only" data-tab="config" onclick="showAdminTab('config',this)">Configurações</button>
+      <button class="admin-tab admin-only" data-tab="relatorios" onclick="showAdminTab('relatorios',this)">Relatórios</button>
+      <button class="admin-tab" data-tab="auditoria" onclick="showAdminTab('auditoria',this)">Auditoria</button>
     </div>
 
     <div class="admin-section active" id="admin-cultos">
+      <div class="admin-top"><strong>Agenda de cultos</strong><button class="btn btn-primary mini" onclick="openServiceEditor()">+ Culto especial</button></div>
       <div id="adminServices" class="empty">Carregando...</div>
+    </div>
+
+    <div class="admin-section" id="admin-past">
+      <div class="admin-top"><strong>Últimos 10 cultos / eventos</strong><span class="muted">Somente consulta</span></div>
+      <div id="pastServices" class="empty">Carregando...</div>
     </div>
 
     <div class="admin-section" id="admin-reservas">
@@ -155,24 +177,88 @@ select,input{width:100%;border:1px solid #cad4da;border-radius:12px;padding:11px
     </div>
 
     <div class="admin-section" id="admin-liderancas">
+      <div class="admin-top"><input id="adminLeaderSearch" placeholder="Buscar liderança..." oninput="renderAdminLeaders(adminData.leaders||[])"><button class="btn btn-primary mini" onclick="openLeaderEditor()">+ Liderança</button></div>
       <div id="adminLeaders" class="empty">Carregando...</div>
     </div>
 
     <div class="admin-section" id="admin-usuarios">
+      <div class="admin-top"><strong>Usuários de operação</strong><button class="btn btn-primary mini" onclick="openUserEditor()">+ Usuário</button></div>
       <div id="adminUsers" class="empty">Carregando...</div>
-      <div class="msg show" style="margin-top:12px">Nesta etapa, a gestão de usuários está em modo consulta. Redefinição de PIN e novos usuários entram no próximo bloco.</div>
     </div>
 
-    <div class="admin-section" id="admin-presenca">
-      <div class="form-row"><label>Culto</label><select id="attendanceService"></select></div>
-      <div class="form-row"><div class="admin-actions" style="justify-content:flex-start"><button class="btn btn-primary" onclick="loadAttendance()">Carregar presença</button><button class="btn" id="attendancePdfBtn" style="display:none" onclick="exportAttendancePdf()">Exportar PDF</button></div></div>
-      <div id="attendanceRows" class="empty">Selecione um culto.</div>
+    <div class="admin-section" id="admin-config">
+      <div class="settings-card">
+        <h3>Contato do líder do Backstage</h3>
+        <p>Esse número aparece para o público quando as reservas estiverem encerradas.</p>
+        <div class="form-row"><label>WhatsApp com DDD</label><input id="backstageWhatsAppInput" inputmode="tel" placeholder="(17) 99999-9999" oninput="formatBackstagePhoneInput(this)"></div>
+        <div class="msg show" id="backstageWhatsAppPreview">Nenhum número cadastrado.</div>
+        <div class="modal-actions"><button class="btn btn-primary" onclick="saveBackstageWhatsAppAdmin()">Salvar WhatsApp</button></div>
+      </div>
     </div>
+
+    <div class="admin-section" id="admin-relatorios">
+      <div class="report-card">
+        <h3>Relatório semanal de presença</h3>
+        <p>Presença inicial calculada pelas reservas, com ajuste manual antes do PDF.</p>
+        <div class="report-toolbar"><div class="form-row"><label>Semana</label><select id="attendanceWeekSelect"></select></div><button class="btn btn-primary mini" onclick="loadWeeklyAttendanceReport()">Carregar semana</button></div>
+        <div id="weeklyAttendanceSummary" class="report-summary"></div>
+        <div id="weeklyAttendanceTable" class="empty">Selecione uma semana.</div>
+        <div class="modal-actions"><button class="btn btn-primary" id="weeklyAttendancePdfBtn" onclick="exportWeeklyAttendancePdf()" disabled>Gerar PDF semanal</button></div>
+      </div>
+      <div class="report-card">
+        <h3>Ranking mensal de presença</h3>
+        <div class="report-toolbar"><div class="form-row"><label>Mês</label><select id="attendanceMonthSelect"></select></div><button class="btn btn-primary mini" onclick="loadMonthlyAttendanceRanking()">Gerar ranking</button></div>
+        <div id="monthlyAttendanceSummary" class="report-summary"></div>
+        <div id="monthlyAttendanceTable" class="empty">Selecione um mês.</div>
+        <div class="modal-actions"><button class="btn btn-primary" id="monthlyAttendancePdfBtn" onclick="exportMonthlyAttendancePdf()" disabled>Gerar PDF mensal</button></div>
+      </div>
+    </div>
+
+    <div class="admin-section" id="admin-auditoria"><div id="auditRows" class="empty">Carregando...</div></div>
 
     <div class="admin-footer"><div class="modal-actions" style="margin-top:0"><button class="btn" onclick="closeModal('backstageModal')">Fechar painel</button><button class="btn btn-dark" onclick="logoutBackstage()">Sair</button></div></div>
   </div>
 </div></div>
 
+
+<div class="modal" id="closedReservationsModal"><div class="modal-box">
+  <div class="modal-head"><div><h2>Reservas para este culto encerradas</h2><div class="muted" id="closedReservationsSubtitle"></div></div><button class="close" onclick="closeModal('closedReservationsModal')">×</button></div>
+  <div class="closed-notice-icon">💬</div><div class="closed-notice-copy" id="closedReservationsCopy">Para movimentações e/ou cancelamento da sua reserva, entre em contato com o líder do Backstage pelo WhatsApp.</div>
+  <div class="modal-actions"><button class="btn" onclick="closeModal('closedReservationsModal')">Fechar</button><a class="btn btn-primary" id="closedReservationsWhatsAppBtn" href="#" target="_blank" rel="noopener">Falar com o Backstage no WhatsApp</a></div>
+</div></div>
+
+<div class="modal" id="serviceEditorModal"><div class="modal-box">
+  <div class="modal-head"><div><h2 id="serviceEditorTitle">Novo culto especial</h2><div class="muted">Cadastre ou ajuste as informações do culto.</div></div><button class="close" onclick="closeModal('serviceEditorModal')">×</button></div>
+  <input type="hidden" id="serviceEditId"><div class="form-row"><label>Nome</label><input id="serviceEditName"></div>
+  <div class="grid2"><div class="form-row"><label>Data</label><input id="serviceEditDate" type="date"></div><div class="form-row"><label>Horário</label><input id="serviceEditTime" type="time"></div></div>
+  <div class="form-row"><label>Observação</label><textarea id="serviceEditNotes"></textarea></div>
+  <div class="modal-actions"><button class="btn" onclick="closeModal('serviceEditorModal')">Cancelar</button><button class="btn btn-primary" onclick="saveServiceEditor()">Salvar culto</button></div>
+</div></div>
+
+<div class="modal" id="leaderEditorModal"><div class="modal-box">
+  <div class="modal-head"><div><h2 id="leaderEditorTitle">Nova liderança</h2><div class="muted">Cadastro administrativo do Backstage.</div></div><button class="close" onclick="closeModal('leaderEditorModal')">×</button></div>
+  <input type="hidden" id="leaderEditId"><div class="form-row"><label>Nome</label><input id="leaderEditFirstName"></div><div class="form-row"><label>Sobrenome</label><input id="leaderEditLastName"></div>
+  <div class="form-row"><label>Título</label><select id="leaderEditTitle"><option>Pastor</option><option>Pastora</option><option>Presbítero</option><option>Presbítera</option><option>Bispo</option><option>Bispa</option></select></div>
+  <div class="form-row"><label>Observação</label><textarea id="leaderEditNotes"></textarea></div>
+  <div class="modal-actions"><button class="btn" onclick="closeModal('leaderEditorModal')">Cancelar</button><button class="btn btn-primary" onclick="saveLeaderEditor()">Salvar liderança</button></div>
+</div></div>
+
+<div class="modal" id="userEditorModal"><div class="modal-box">
+  <div class="modal-head"><div><h2 id="userEditorTitle">Novo usuário Backstage</h2></div><button class="close" onclick="closeModal('userEditorModal')">×</button></div>
+  <input type="hidden" id="userEditId"><div class="form-row"><label>Nome</label><input id="userEditName"></div><div class="form-row"><label>Perfil</label><select id="userEditProfile"><option>Backstage</option><option>Administrador</option></select></div>
+  <div class="modal-actions"><button class="btn" onclick="closeModal('userEditorModal')">Cancelar</button><button class="btn btn-primary" onclick="saveUserEditor()">Salvar usuário</button></div>
+</div></div>
+
+<div class="modal" id="setupCodeModal"><div class="modal-box">
+  <div class="modal-head"><div><h2>Código temporário de primeiro acesso</h2></div><button class="close" onclick="closeModal('setupCodeModal')">×</button></div>
+  <div class="setup-code-box" id="setupCodeValue"></div><div class="muted">Informe este código ao usuário. Ele será usado apenas para definir o PIN individual da V5.</div>
+  <div class="modal-actions"><button class="btn btn-primary" onclick="closeModal('setupCodeModal')">OK</button></div>
+</div></div>
+
+<div class="modal" id="pastReservationsModal"><div class="modal-box">
+  <div class="modal-head"><div><h2>Reservas do culto</h2><div class="muted" id="pastReservationsSubtitle"></div></div><button class="close" onclick="closeModal('pastReservationsModal')">×</button></div>
+  <div id="pastReservationsRows"></div>
+</div></div>
 
 <div class="modal" id="mapSpecialModal"><div class="modal-box">
   <div class="modal-head"><div><h2>Reserva Especial</h2><div class="muted" id="mapSpecialSeatLabel"></div></div><button class="close" onclick="closeModal('mapSpecialModal')">×</button></div>
