@@ -856,25 +856,6 @@ function cancelAdminReservation(id){
   }).catch(function(e){alert(e.message)}).finally(function(){loading(false)});
   });
 }
-function loadAttendance(){
-  var serviceId=document.getElementById('attendanceService').value;if(!serviceId)return;
-  loading(true);rpc('v5_attendance',{p_token:backstageToken,p_service_id:serviceId}).then(function(r){
-    if(!r.ok)throw new Error(r.message||'Falha ao carregar presença.');
-    attendanceCurrentRows=r.rows||[];
-    document.getElementById('attendancePdfBtn').style.display='inline-block';
-    var box=document.getElementById('attendanceRows');box.className='admin-list';
-    box.innerHTML=(r.rows||[]).map(function(x){
-      var next=x.status==='Presente'?'Ausente':'Presente';
-      return '<div class="admin-item"><div><strong>'+escapeHtml(x.name)+'</strong><div class="muted">'+escapeHtml(x.title)+' • '+escapeHtml(x.status)+' • '+escapeHtml(x.source)+'</div></div><button class="btn mini" onclick="setAttendance(\''+serviceId+'\',\''+x.leaderId+'\',\''+next+'\')">Marcar '+next+'</button></div>';
-    }).join('');
-  }).catch(function(e){alert(e.message)}).finally(function(){loading(false)});
-}
-function setAttendance(serviceId,leaderId,status){
-  loading(true);rpc('v5_set_attendance',{p_token:backstageToken,p_service_id:serviceId,p_leader_id:leaderId,p_status:status}).then(function(r){
-    if(!r.ok)throw new Error(r.message||'Não foi possível atualizar.');
-    return loadAttendance();
-  }).catch(function(e){alert(e.message)}).finally(function(){loading(false)});
-}
 function renderAdminModeBar(){
   var bar=document.getElementById('adminModeBar');if(!bar)return;
   var shareBar=document.getElementById('mapShareBar');
@@ -961,26 +942,6 @@ function shareMapImage(){
     if(e&&e.name==='AbortError')return;
     console.error(e);
   }).finally(function(){loading(false)});
-}
-function exportAttendancePdf(){
-  if(!attendanceCurrentRows.length)return;
-  if(!window.jspdf||!window.jspdf.jsPDF)return;
-  var selected=document.getElementById('attendanceService');
-  var label=selected&&selected.selectedIndex>=0?selected.options[selected.selectedIndex].text:'Relatório de Presença';
-  var doc=new window.jspdf.jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
-  doc.setFontSize(17);doc.text('Cabana Church | Relatório de Presença',14,16);
-  doc.setFontSize(10);doc.text(label,14,23);
-  var presentes=attendanceCurrentRows.filter(function(x){return x.status==='Presente'}).length;
-  var ausentes=attendanceCurrentRows.filter(function(x){return x.status==='Ausente'}).length;
-  doc.text('Presentes: '+presentes+'   Ausentes: '+ausentes+'   Total elegível: '+attendanceCurrentRows.length,14,29);
-  var body=attendanceCurrentRows.map(function(x,i){return [String(i+1),x.name||'',x.title||'',x.status||'',x.source||'']});
-  if(typeof doc.autoTable==='function'){
-    doc.autoTable({startY:34,head:[['#','Liderança','Título','Presença','Origem']],body:body,styles:{fontSize:9,cellPadding:2.4},headStyles:{fontStyle:'bold'}});
-  }else{
-    var y=36;body.forEach(function(r){doc.text(r.join(' | '),14,y);y+=6;if(y>190){doc.addPage();y=15}});
-  }
-  var safe=label.replace(/[^a-zA-Z0-9_-]+/g,'_').replace(/^_+|_+$/g,'');
-  doc.save('presenca_'+(safe||'culto')+'.pdf');
 }
 function logoutBackstage(){
   systemConfirm('Deseja realmente sair do Backstage?',{title:'Sair do Backstage',okText:'Sair'}).then(function(ok){
