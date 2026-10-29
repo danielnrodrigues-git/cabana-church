@@ -269,6 +269,12 @@ select,input{width:100%;border:1px solid #cad4da;border-radius:12px;padding:11px
   <div class="modal-actions"><button class="btn" onclick="closeModal('mapSpecialModal')">Cancelar</button><button class="btn btn-primary" onclick="confirmMapSpecial()">Confirmar</button></div>
 </div></div>
 
+<div class="modal" id="backstageSeatChoiceModal"><div class="modal-box">
+  <div class="modal-head"><div><h2>Reservar assento</h2><div class="muted" id="backstageSeatChoiceLabel"></div></div><button class="close" onclick="closeModal('backstageSeatChoiceModal')">×</button></div>
+  <div class="form-row"><div class="muted">Como deseja utilizar esta poltrona?</div></div>
+  <div class="modal-actions"><button class="btn" onclick="closeModal('backstageSeatChoiceModal')">Cancelar</button><button class="btn" onclick="chooseBackstageLeadership()">Reserva de Liderança</button><button class="btn btn-primary" onclick="chooseBackstageSpecial()">Reserva Especial</button></div>
+</div></div>
+
 
 <div class="modal" id="systemConfirmModal"><div class="modal-box">
   <div class="modal-head"><div><h2 id="systemConfirmTitle">Confirmar ação</h2><div class="muted" id="systemConfirmText"></div></div><button class="close" onclick="resolveSystemConfirm(false)">×</button></div>
@@ -281,7 +287,7 @@ select,input{width:100%;border:1px solid #cad4da;border-radius:12px;padding:11px
 var API='https://hqqsymgbepgzxydmgtmd.supabase.co/functions/v1/meu-assento-api';
 var SUPABASE_URL='https://hqqsymgbepgzxydmgtmd.supabase.co';
 var SUPABASE_KEY='sb_publishable_vihLcuNEo1C23w4awZP7zQ_aEjqbeZZ';
-var bootstrap=null,currentService='',seats=[],mapCanReserve=false,selectedSeat='',selectedSpecialSeat='',selectedLeadershipReservation='',pendingSeatAfterRegistration='',backstageToken=localStorage.getItem('meuAssentoV5BackstageToken')||'',backstageUserInfo=null,backstageUsers=[],adminData={services:[],pastServices:[],leaders:[],users:[],audit:[],attendanceReports:{}},attendanceCurrentRows=[],weeklyAttendanceReport=null,monthlyAttendanceReport=null,closedNoticeServiceId='',systemConfirmResolver=null;
+var bootstrap=null,currentService='',seats=[],mapCanReserve=false,selectedSeat='',selectedSpecialSeat='',selectedBackstageChoiceSeat='',selectedLeadershipReservation='',pendingSeatAfterRegistration='',backstageToken=localStorage.getItem('meuAssentoV5BackstageToken')||'',backstageUserInfo=null,backstageUsers=[],adminData={services:[],pastServices:[],leaders:[],users:[],audit:[],attendanceReports:{}},attendanceCurrentRows=[],weeklyAttendanceReport=null,monthlyAttendanceReport=null,closedNoticeServiceId='',systemConfirmResolver=null;
 function api(method,args){return fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({method:method,args:args||[]})}).then(function(r){if(!r.ok)throw new Error('Falha de comunicação ('+r.status+')');return r.json();});}
 function rpc(fn,body){return fetch(SUPABASE_URL+'/rest/v1/rpc/'+fn,{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY},body:JSON.stringify(body||{})}).then(function(r){if(!r.ok)throw new Error('Falha administrativa ('+r.status+')');return r.json();});}
 function loading(v){document.getElementById('loading').className=v?'loading show':'loading';}
@@ -440,7 +446,7 @@ function isSvgSeatClickableV44(s){
   if(!s||s.state==='Bloqueado fixo')return false;
   if(backstageToken){
     if(s.occupied&&s.reservationId)return true;
-    if(s.block!=='Central'&&!s.occupied)return true;
+    if(!s.occupied)return true;
   }
   return !s.occupied&&s.publicReservable&&s.state==='Livre'&&mapCanReserve;
 }
@@ -455,8 +461,28 @@ function handleSvgSeatClick(id){
     }
     return;
   }
-  if(backstageToken&&s.block!=='Central'&&!s.occupied){openMapSpecial(s);return;}
+  if(backstageToken&&!s.occupied){
+    if(s.block==='Central'&&s.number){openBackstageSeatChoice(s);return;}
+    openMapSpecial(s);return;
+  }
   if(!s.occupied&&s.publicReservable&&s.state==='Livre'&&mapCanReserve){openReserve(s);return;}
+}
+function openBackstageSeatChoice(s){
+  selectedBackstageChoiceSeat=s.id;
+  document.getElementById('backstageSeatChoiceLabel').textContent='Assento '+String(s.number||'').padStart(2,'0');
+  show('backstageSeatChoiceModal');
+}
+function chooseBackstageLeadership(){
+  var s=seatById(selectedBackstageChoiceSeat);if(!s)return;
+  closeModal('backstageSeatChoiceModal');
+  selectedBackstageChoiceSeat='';
+  openReserve(s);
+}
+function chooseBackstageSpecial(){
+  var s=seatById(selectedBackstageChoiceSeat);if(!s)return;
+  closeModal('backstageSeatChoiceModal');
+  selectedBackstageChoiceSeat='';
+  openMapSpecial(s);
 }
 function cancelLeadershipReservationFromMap(){
   if(!selectedLeadershipReservation)return;
@@ -469,7 +495,7 @@ function cancelLeadershipReservationFromMap(){
 function openMapSpecial(s){
   if(!backstageToken){alert('Entre no Backstage para criar Reservas Especiais.');return}
   selectedSpecialSeat=s.id;
-  document.getElementById('mapSpecialSeatLabel').textContent=(s.block||'Assento lateral')+' • F'+s.row+' • P'+s.position;
+  document.getElementById('mapSpecialSeatLabel').textContent=(s.block==='Central'&&s.number)?('Assento '+String(s.number).padStart(2,'0')):((s.block||'Assento lateral')+' • F'+s.row+' • P'+s.position);
   message('mapSpecialMsg','');
   show('mapSpecialModal');
 }
