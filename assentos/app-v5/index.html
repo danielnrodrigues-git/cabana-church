@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Meu Assento</title>
+<title>Meu Assento | HOMOLOGAÇÃO</title>
 <meta name="theme-color" content="#1EAEB9">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Meu Assento">
@@ -53,12 +53,14 @@ select,input{width:100%;border:1px solid #cad4da;border-radius:12px;padding:11px
 .audit-row{padding:9px 0;border-bottom:1px solid #edf1f3;font-size:12px}.audit-row strong{display:block}
 .setup-code-box{font-size:24px;font-weight:900;letter-spacing:3px;text-align:center;background:#eefafa;border-radius:12px;padding:16px;margin:12px 0;color:#126f77}
 .closed-notice-icon{text-align:center;font-size:42px;margin:8px}.closed-notice-copy{text-align:center;color:var(--muted);line-height:1.5}
+.env-banner{background:#8a4b08;color:#fff;text-align:center;font-size:11px;font-weight:900;letter-spacing:.8px;padding:7px 10px;position:sticky;top:0;z-index:60}
 </style>
 <script src="https://unpkg.com/jspdf@4.2.1/dist/jspdf.umd.min.js"></script>
 <script src="https://unpkg.com/jspdf-autotable@5.0.9/dist/jspdf.plugin.autotable.min.js"></script>
 <script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 </head>
 <body>
+<div class="env-banner">AMBIENTE DE HOMOLOGAÇÃO — DADOS DE TESTE</div>
 <header>
   <div class="brand"><div class="brand-lockup" aria-label="Cabana Church"><svg class="brand-mark" viewBox="0 0 120 42" aria-hidden="true"><path d="M18 27 L51 7 Q60 2 69 7 L102 27 Q106 30 102 35 Q99 39 94 36 L65 19 Q60 16 55 19 L35 31 H61 Q65 31 68 34 L72 38 H33 Q27 38 22 34 L18 31 Q15 29 18 27Z" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg><div class="brand-name">CABANA</div><div class="brand-church">CHURCH</div></div></div>
   <button class="header-register" onclick="openRegistration()" aria-label="Cadastro"><span class="header-register-icon-wrap"><span class="header-register-icon">👤</span></span><span class="header-register-label">Cadastro</span></button>
@@ -284,12 +286,13 @@ select,input{width:100%;border:1px solid #cad4da;border-radius:12px;padding:11px
 <div class="loading" id="loading">Atualizando Meu Assento...</div>
 
 <script>
-var API='https://hqqsymgbepgzxydmgtmd.supabase.co/functions/v1/meu-assento-api';
-var SUPABASE_URL='https://hqqsymgbepgzxydmgtmd.supabase.co';
-var SUPABASE_KEY='sb_publishable_vihLcuNEo1C23w4awZP7zQ_aEjqbeZZ';
+var API='__HOMOLOGACAO_GOOGLE_APPS_SCRIPT_URL__';
+var SUPABASE_URL='';
+var SUPABASE_KEY='';
 var bootstrap=null,currentService='',seats=[],mapCanReserve=false,selectedSeat='',selectedSpecialSeat='',selectedBackstageChoiceSeat='',selectedLeadershipReservation='',pendingSeatAfterRegistration='',backstageToken=localStorage.getItem('meuAssentoV5BackstageToken')||'',backstageUserInfo=null,backstageUsers=[],adminData={services:[],pastServices:[],leaders:[],users:[],audit:[],attendanceReports:{}},attendanceCurrentRows=[],weeklyAttendanceReport=null,monthlyAttendanceReport=null,closedNoticeServiceId='',systemConfirmResolver=null;
-function api(method,args){return fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({method:method,args:args||[]})}).then(function(r){if(!r.ok)throw new Error('Falha de comunicação ('+r.status+')');return r.json();});}
-function rpc(fn,body){return fetch(SUPABASE_URL+'/rest/v1/rpc/'+fn,{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY},body:JSON.stringify(body||{})}).then(function(r){if(!r.ok)throw new Error('Falha administrativa ('+r.status+')');return r.json();});}
+function stagingBackendReady(){return API.indexOf('__HOMOLOGACAO_')!==0;}
+function api(method,args){if(!stagingBackendReady())return Promise.reject(new Error('Backend de homologação ainda não conectado.'));return fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=UTF-8'},body:JSON.stringify({method:method,args:args||[]})}).then(function(r){if(!r.ok)throw new Error('Falha de comunicação ('+r.status+')');return r.json();});}
+function rpc(fn,body){if(!stagingBackendReady())return Promise.reject(new Error('Backend de homologação ainda não conectado.'));return api(fn,[body||{}]);}
 function loading(v){document.getElementById('loading').className=v?'loading show':'loading';}
 function show(id){document.getElementById(id).classList.add('show')} function closeModal(id){document.getElementById(id).classList.remove('show')}
 function message(id,text,error){var e=document.getElementById(id);e.textContent=text||'';e.className='msg'+(text?' show':'')+(error?' error':'');}
