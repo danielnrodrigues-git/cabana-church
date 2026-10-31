@@ -46,8 +46,9 @@ select,input{width:100%;border:1px solid #cad6db;border-radius:12px;padding:11px
       <div class="field"><label>Selecione seu nome</label><select id="leaderSelect" onchange="updateLeaderLoginState()"><option value="">Carregando...</option></select></div>
       <div id="leaderPinWrap" class="field hidden" style="margin-top:10px"><label>PIN de 6 dígitos</label><input id="leaderPin" inputmode="numeric" maxlength="6" type="password" placeholder="••••••"></div>
       <div class="row" style="margin-top:12px">
-        <button id="leaderLoginBtn" class="btn primary hidden" onclick="loginLeader()">Entrar</button>
-        <button id="leaderBioLoginBtn" class="btn hidden" onclick="biometricLogin('Leader')">Entrar com biometria</button>
+        <button id="leaderLoginBtn" class="btn primary hidden" onclick="smartLeaderLogin()">Entrar</button>
+        <button id="leaderRetryBioBtn" class="btn hidden" onclick="biometricLogin('Leader')">Tentar biometria novamente</button>
+        <button id="leaderPinLoginBtn" class="btn hidden" onclick="loginLeader()">Entrar com PIN</button>
         <button id="leaderFirstAccessBtn" class="btn hidden" onclick="openFirstAccess()">Primeiro acesso</button>
       </div>
       <div id="loginMsg" class="msg"></div>
@@ -161,16 +162,36 @@ function updateLeaderLoginState(){
   const leader=(bootstrap.leaders||[]).find(x=>x.id===id);
   const selected=!!leader;
   const active=!!(leader&&leader.accessEnabled);
-  qs('leaderPinWrap').classList.toggle('hidden',!active);
+  const hasPasskey=!!(leader&&leader.hasPasskey);
+  qs('leaderPinWrap').classList.add('hidden');
   qs('leaderLoginBtn').classList.toggle('hidden',!active);
-  qs('leaderBioLoginBtn').classList.toggle('hidden',!active);
+  qs('leaderRetryBioBtn').classList.add('hidden');
+  qs('leaderPinLoginBtn').classList.add('hidden');
   qs('leaderFirstAccessBtn').classList.toggle('hidden',!selected||active);
+  qs('leaderLoginBtn').dataset.hasPasskey=hasPasskey?'1':'0';
   msg('loginMsg','',false);
 }
 function openFirstAccess(){qs('firstLeader').value=qs('leaderSelect').value;openModal('firstAccessModal')}
 async function doFirstAccess(){
   const a=qs('firstPin').value,b=qs('firstPin2').value;if(a!==b)return msg('firstMsg','Os PINs não conferem.',true);
   loading(true);try{const r=await api('firstAccess',[{leaderId:qs('firstLeader').value,code:qs('firstCode').value,pin:a}]);if(!r.ok)return msg('firstMsg',r.message,true);leaderToken=r.token;localStorage.setItem('v6LeaderToken',leaderToken);closeModal('firstAccessModal');await loadLeader();setTimeout(()=>{if(confirm('Deseja ativar Face ID, digital ou desbloqueio do aparelho neste dispositivo?'))enablePasskey('Leader')},200)}catch(e){msg('firstMsg',e.message,true)}finally{loading(false)}
+}
+async function smartLeaderLogin(){
+  const id=qs('leaderSelect').value;
+  const leader=(bootstrap.leaders||[]).find(x=>x.id===id);
+  if(!leader)return;
+  if(leader.hasPasskey){
+    const ok=await biometricLogin('Leader',true);
+    if(ok)return;
+    qs('leaderRetryBioBtn').classList.remove('hidden');
+    qs('leaderPinWrap').classList.remove('hidden');
+    qs('leaderPinLoginBtn').classList.remove('hidden');
+    msg('loginMsg','Não foi possível concluir o acesso biométrico. Tente novamente ou entre com seu PIN.',true);
+    return;
+  }
+  qs('leaderPinWrap').classList.remove('hidden');
+  qs('leaderPinLoginBtn').classList.remove('hidden');
+  qs('leaderLoginBtn').classList.add('hidden');
 }
 async function loginLeader(){
   loading(true);try{const r=await api('loginLeader',[{leaderId:qs('leaderSelect').value,pin:qs('leaderPin').value}]);if(!r.ok){if(r.code==='FIRST_ACCESS_REQUIRED')openFirstAccess();return msg('loginMsg',r.message,true)}leaderToken=r.token;localStorage.setItem('v6LeaderToken',leaderToken);await loadLeader()}catch(e){msg('loginMsg',e.message,true)}finally{loading(false)}
@@ -295,17 +316,18 @@ async function enablePasskey(ownerType){
     alert(y.message||'Acesso biométrico ativado.');
   }catch(e){alert('Não foi possível ativar a biometria: '+(e.message||e))}
 }
-async function biometricLogin(ownerType){
-  if(!webAuthnAvailable())return alert('Este navegador ou dispositivo não oferece suporte a biometria/passkeys.');
-  const ownerId=ownerType==='Leader'?qs('leaderSelect').value:qs('backstageUser').value;if(!ownerId)return alert('Selecione seu usuário primeiro.');
+async function biometricLogin(ownerType,silent=false){
+  if(!webAuthnAvailable()){if(!silent)alert('Este navegador ou dispositivo não oferece suporte a biometria/passkeys.');return false}
+  const ownerId=ownerType==='Leader'?qs('leaderSelect').value:qs('backstageUser').value;if(!ownerId){if(!silent)alert('Selecione seu usuário primeiro.');return false}
   try{
-    const x=await api('passkeyAuthOptions',[{ownerType,ownerId}]);if(!x.ok)return alert(x.message);
+    const x=await api('passkeyAuthOptions',[{ownerType,ownerId}]);if(!x.ok){if(!silent)alert(x.message);return false}
     const cred=await navigator.credentials.get({publicKey:publicKeyRequestOptions(x.options)});
     if(!cred)throw new Error('Autenticação biométrica cancelada.');
     const response=authenticationCredentialJSON(cred);
-    const y=await api('passkeyAuthVerify',[{ownerType,ownerId,response}]);if(!y.ok)return alert(y.message);
+    const y=await api('passkeyAuthVerify',[{ownerType,ownerId,response}]);if(!y.ok){if(!silent)alert(y.message);return false}
     if(ownerType==='Leader'){leaderToken=y.token;localStorage.setItem('v6LeaderToken',leaderToken);await loadLeader()}else{backstageToken=y.token;localStorage.setItem('v6BackstageToken',backstageToken);closeModal('backstageModal');await loadAdmin()}
-  }catch(e){alert('Não foi possível usar a biometria: '+(e.message||e))}
+    return true;
+  }catch(e){if(!silent)alert('Não foi possível usar a biometria: '+(e.message||e));return false}
 }
 function logoutAll(){leaderToken='';backstageToken='';leaderHome=null;adminData=null;localStorage.removeItem('v6LeaderToken');localStorage.removeItem('v6BackstageToken');qs('leaderView').classList.add('hidden');qs('adminView').classList.add('hidden');qs('publicView').classList.remove('hidden');qs('logoutBtn').classList.add('hidden');updateLeaderLoginState()}
 init();
