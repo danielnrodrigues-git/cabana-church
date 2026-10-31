@@ -6,7 +6,6 @@
 <title>Meu Assento V6 | Homologação</title>
 <meta name="theme-color" content="#52ABB8">
 <link rel="icon" type="image/svg+xml" href="./favicon.svg">
-<script src="https://unpkg.com/@simplewebauthn/browser@14.0.3/dist/bundle/index.umd.min.js"></script>
 <style>
 :root{--teal:#52ABB8;--teal2:#178e99;--ink:#172033;--muted:#68737d;--line:#dde7ea;--bg:#f4f7f8;--ok:#197154;--warn:#9c6300;--bad:#a43e3e}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:var(--ink)}
@@ -217,25 +216,84 @@ async function saveCouple(){loading(true);try{const r=await api('adminLinkCouple
 async function resetLeader(id){if(!confirm('Redefinir o acesso desta liderança? PIN, sessões e passkeys serão removidos.'))return;const r=await api('adminResetLeaderAccess',[{token:backstageToken,leaderId:id}]);alert(r.message);await loadAdmin()}
 function openCodeModal(){qs('newGlobalCode').value='';msg('codeMsg','',false);openModal('codeModal')}
 async function saveGlobalCode(){const r=await api('adminSetFirstAccessCode',[{token:backstageToken,code:qs('newGlobalCode').value}]);msg('codeMsg',r.message,!r.ok)}
+function b64urlToBuf(s){
+  s=String(s||'').replace(/-/g,'+').replace(/_/g,'/');
+  while(s.length%4)s+='=';
+  const bin=atob(s), out=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++)out[i]=bin.charCodeAt(i);
+  return out.buffer;
+}
+function bufToB64url(buf){
+  const bytes=new Uint8Array(buf||new ArrayBuffer(0));
+  let bin=''; for(const b of bytes)bin+=String.fromCharCode(b);
+  return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function publicKeyCreationOptions(o){
+  const x=structuredClone(o);
+  x.challenge=b64urlToBuf(x.challenge);
+  if(x.user&&x.user.id)x.user.id=b64urlToBuf(x.user.id);
+  if(Array.isArray(x.excludeCredentials))x.excludeCredentials=x.excludeCredentials.map(c=>({...c,id:b64urlToBuf(c.id)}));
+  return x;
+}
+function publicKeyRequestOptions(o){
+  const x=structuredClone(o);
+  x.challenge=b64urlToBuf(x.challenge);
+  if(Array.isArray(x.allowCredentials))x.allowCredentials=x.allowCredentials.map(c=>({...c,id:b64urlToBuf(c.id)}));
+  return x;
+}
+function registrationCredentialJSON(cred){
+  const r=cred.response;
+  return {
+    id:cred.id,rawId:bufToB64url(cred.rawId),type:cred.type,
+    authenticatorAttachment:cred.authenticatorAttachment||undefined,
+    clientExtensionResults:cred.getClientExtensionResults?cred.getClientExtensionResults():{},
+    response:{
+      clientDataJSON:bufToB64url(r.clientDataJSON),
+      attestationObject:bufToB64url(r.attestationObject),
+      transports:r.getTransports?r.getTransports():[],
+      publicKeyAlgorithm:r.getPublicKeyAlgorithm?r.getPublicKeyAlgorithm():undefined,
+      publicKey:r.getPublicKey&&r.getPublicKey()?bufToB64url(r.getPublicKey()):undefined
+    }
+  };
+}
+function authenticationCredentialJSON(cred){
+  const r=cred.response;
+  return {
+    id:cred.id,rawId:bufToB64url(cred.rawId),type:cred.type,
+    authenticatorAttachment:cred.authenticatorAttachment||undefined,
+    clientExtensionResults:cred.getClientExtensionResults?cred.getClientExtensionResults():{},
+    response:{
+      clientDataJSON:bufToB64url(r.clientDataJSON),
+      authenticatorData:bufToB64url(r.authenticatorData),
+      signature:bufToB64url(r.signature),
+      userHandle:r.userHandle?bufToB64url(r.userHandle):null
+    }
+  };
+}
+function webAuthnAvailable(){return !!(window.PublicKeyCredential&&navigator.credentials&&navigator.credentials.create&&navigator.credentials.get)}
 async function enablePasskey(ownerType){
-  if(!window.SimpleWebAuthnBrowser)return alert('Este navegador não carregou o suporte a biometria.');
+  if(!webAuthnAvailable())return alert('Este navegador ou dispositivo não oferece suporte a biometria/passkeys.');
   const token=ownerType==='Leader'?leaderToken:backstageToken;
   try{
     const x=await api('passkeyRegisterOptions',[{ownerType,token}]);if(!x.ok)return alert(x.message);
-    const response=await SimpleWebAuthnBrowser.startRegistration({optionsJSON:x.options});
+    const cred=await navigator.credentials.create({publicKey:publicKeyCreationOptions(x.options)});
+    if(!cred)throw new Error('Cadastro biométrico cancelado.');
+    const response=registrationCredentialJSON(cred);
     const y=await api('passkeyRegisterVerify',[{ownerType,token,response,deviceLabel:navigator.platform||'Dispositivo'}]);
     alert(y.message||'Acesso biométrico ativado.');
-  }catch(e){alert('Não foi possível ativar a biometria: '+e.message)}
+  }catch(e){alert('Não foi possível ativar a biometria: '+(e.message||e))}
 }
 async function biometricLogin(ownerType){
-  if(!window.SimpleWebAuthnBrowser)return alert('Este navegador não suporta este acesso.');
+  if(!webAuthnAvailable())return alert('Este navegador ou dispositivo não oferece suporte a biometria/passkeys.');
   const ownerId=ownerType==='Leader'?qs('leaderSelect').value:qs('backstageUser').value;if(!ownerId)return alert('Selecione seu usuário primeiro.');
   try{
     const x=await api('passkeyAuthOptions',[{ownerType,ownerId}]);if(!x.ok)return alert(x.message);
-    const response=await SimpleWebAuthnBrowser.startAuthentication({optionsJSON:x.options});
+    const cred=await navigator.credentials.get({publicKey:publicKeyRequestOptions(x.options)});
+    if(!cred)throw new Error('Autenticação biométrica cancelada.');
+    const response=authenticationCredentialJSON(cred);
     const y=await api('passkeyAuthVerify',[{ownerType,ownerId,response}]);if(!y.ok)return alert(y.message);
     if(ownerType==='Leader'){leaderToken=y.token;localStorage.setItem('v6LeaderToken',leaderToken);await loadLeader()}else{backstageToken=y.token;localStorage.setItem('v6BackstageToken',backstageToken);closeModal('backstageModal');await loadAdmin()}
-  }catch(e){alert('Não foi possível usar a biometria: '+e.message)}
+  }catch(e){alert('Não foi possível usar a biometria: '+(e.message||e))}
 }
 function logoutAll(){leaderToken='';backstageToken='';leaderHome=null;adminData=null;localStorage.removeItem('v6LeaderToken');localStorage.removeItem('v6BackstageToken');qs('leaderView').classList.add('hidden');qs('adminView').classList.add('hidden');qs('publicView').classList.remove('hidden');qs('logoutBtn').classList.add('hidden')}
 init();
