@@ -63,6 +63,10 @@ select,input{width:100%;border:1px solid #cad6db;border-radius:12px;padding:11px
         <button id="enableLeaderPasskeyBtn" class="btn" onclick="enablePasskey('Leader')">Ativar biometria</button>
       </div>
     </div>
+    <div class="card" id="spouseCard">
+      <div class="section-title">Cônjuge</div>
+      <div id="spouseContent"></div>
+    </div>
     <div class="card">
       <div class="section-title">Próximos cultos</div>
       <div id="leaderServices"></div>
@@ -202,7 +206,27 @@ async function loadLeader(){
   qs('welcomeLeader').textContent='Olá, '+r.leader.displayName;
   qs('leaderSubtitle').textContent=r.spouse?'Cônjuge vinculado: '+r.spouse.displayName:'Seu perfil está pronto para confirmar presença.';
   qs('enableLeaderPasskeyBtn').classList.toggle('hidden',!!r.hasPasskey);
+  renderSpouseCard();
   renderLeaderServices();
+}
+function renderSpouseCard(){
+  const box=qs('spouseContent');
+  if(leaderHome.spouse){
+    box.innerHTML='<div class="row" style="justify-content:space-between"><div><strong>'+esc(leaderHome.spouse.displayName)+'</strong><div class="muted">'+esc(leaderHome.spouse.title||'')+'</div></div><span class="pill ok">Vinculado</span></div>';
+    return;
+  }
+  const candidates=(bootstrap.leaders||[]).filter(x=>x.id!==leaderHome.leader.id);
+  box.innerHTML='<div class="muted" style="margin-bottom:10px">Associe seu cônjuge para poder confirmar a presença de vocês dois no mesmo culto.</div><div class="field"><label>Selecione o cônjuge</label><select id="leaderSpouseSelect"><option value="">Selecione...</option>'+candidates.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.displayName)+' · '+esc(x.title||'')+'</option>').join('')+'</select></div><button class="btn primary" style="margin-top:10px" onclick="requestSpouseLink()">Associar cônjuge</button><div id="spouseMsg" class="msg"></div>';
+}
+async function requestSpouseLink(){
+  const spouseId=qs('leaderSpouseSelect')?.value;
+  if(!spouseId)return msg('spouseMsg','Selecione o cônjuge.',true);
+  loading(true);
+  try{
+    const r=await api('leaderLinkSpouse',[{token:leaderToken,spouseId}]);
+    if(!r.ok)return msg('spouseMsg',r.message||'Não foi possível associar.',true);
+    await loadLeader();
+  }catch(e){msg('spouseMsg',e.message,true)}finally{loading(false)}
 }
 function renderLeaderServices(){
   qs('leaderServices').innerHTML=(leaderHome.services||[]).map(s=>{
