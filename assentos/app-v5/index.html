@@ -77,7 +77,7 @@ select,input{width:100%;border:1px solid #cad6db;border-radius:12px;padding:11px
     <div class="hero"><h1>Painel Backstage</h1><p id="adminWho"></p></div>
     <div class="card">
       <div class="row">
-        <button class="btn primary" onclick="enablePasskey('Backstage')">Ativar biometria</button>
+        <button id="enableBackstagePasskeyBtn" class="btn primary" onclick="enablePasskey('Backstage')">Ativar biometria</button>
         <button class="btn" onclick="window.open('./admin-v5.html','_blank')">Administração completa V5</button>
         <button class="btn" onclick="openCodeModal()">Código de primeiro acesso</button>
       </div>
@@ -319,9 +319,19 @@ function renderAdmin(){
     const c=(adminData.confirmations||[]).filter(x=>x.service_id===s.id&&x.status==='Confirmado').length;
     const late=(adminData.confirmations||[]).filter(x=>x.service_id===s.id&&x.status==='Cancelado'&&x.late_cancellation).length;
     const latest=(adminData.runs||[]).find(x=>x.service_id===s.id&&x.status==='Concluída');
-    return '<div class="service"><h3>'+esc(s.name)+'</h3><div class="meta">'+dt(s.starts_at)+'</div><div class="row"><span class="pill ok">'+c+' confirmados</span>'+(late?'<span class="pill bad">'+late+' cancelamento(s) tardio(s)</span>':'')+(latest?'<span class="pill">Distribuição '+latest.version+'</span>':'')+'</div><div class="row" style="margin-top:10px"><button class="btn primary" onclick="runAllocation(\''+s.id+'\')">'+(latest?'Refazer distribuição':'Fazer distribuição')+'</button><button class="btn" onclick="showAllocation(\''+s.id+'\')">Ver assentos</button></div></div>'
+    return '<div class="service"><h3>'+esc(s.name)+'</h3><div class="meta">'+dt(s.starts_at)+'</div><div class="row"><span class="pill '+(s.status==='Aberto'?'ok':s.status==='Fechado'?'bad':'')+'">'+esc(s.status)+'</span><span class="pill ok">'+c+' confirmados</span>'+(late?'<span class="pill bad">'+late+' cancelamento(s) tardio(s)</span>':'')+(latest?'<span class="pill">Distribuição '+latest.version+'</span>':'')+'</div><div class="row" style="margin-top:10px"><button class="btn '+(s.status==='Aberto'?'danger':'primary')+'" onclick="setServiceConfirmationStatus(\''+s.id+'\',\''+(s.status==='Aberto'?'Fechado':'Aberto')+'\')">'+(s.status==='Aberto'?'Fechar confirmações':'Liberar confirmações')+'</button><button class="btn primary" onclick="runAllocation(\''+s.id+'\')">'+(latest?'Refazer distribuição':'Fazer distribuição')+'</button><button class="btn" onclick="showAllocation(\''+s.id+'\')">Ver assentos</button></div></div>'
   }).join('');
   qs('adminLeaders').innerHTML='<table class="admin-table"><thead><tr><th>Liderança</th><th>Acesso</th><th></th></tr></thead><tbody>'+(adminData.leaders||[]).map(l=>'<tr><td><strong>'+esc(l.displayName)+'</strong><br><span class="muted">'+esc(l.title)+'</span></td><td>'+(l.accessEnabled?'<span class="pill ok">Ativado</span>':'<span class="pill">Não ativado</span>')+'</td><td><button class="btn small" onclick="openLeaderEdit(\''+l.id+'\')">Editar</button></td></tr>').join('')+'</tbody></table>';
+}
+async function setServiceConfirmationStatus(id,status){
+  const verb=status==='Aberto'?'liberar as confirmações':'fechar as confirmações';
+  if(!confirm('Deseja '+verb+' deste culto?'))return;
+  loading(true);
+  try{
+    const r=await api('adminSetServiceStatus',[{token:backstageToken,serviceId:id,status}]);
+    if(!r.ok)return alert(r.message||'Não foi possível alterar o culto.');
+    await loadAdmin();
+  }catch(e){alert(e.message)}finally{loading(false)}
 }
 async function runAllocation(id){if(!confirm('Executar a distribuição agora? Uma distribuição anterior ficará registrada no histórico.'))return;loading(true);try{const r=await api('runAllocation',[{token:backstageToken,serviceId:id}]);if(!r.ok)return alert(r.message);alert('Distribuição '+r.version+' concluída. '+r.assigned+' liderança(s) alocada(s).'+(r.unassigned.length?' '+r.unassigned.length+' sem assento.':''));await loadAdmin();await showAllocation(id)}catch(e){alert(e.message)}finally{loading(false)}}
 async function showAllocation(id){loading(true);try{const r=await api('getAllocation',[{token:backstageToken,serviceId:id}]);if(!r.run)return alert('Ainda não existe distribuição para este culto.');const lines=(r.allocations||[]).map(a=>'Assento '+String(a.seats?.seat_number||a.seat_id).padStart(2,'0')+' — '+(a.leaders?.display_name||'')).join('\n');alert('Distribuição '+r.run.version+'\n\n'+lines)}catch(e){alert(e.message)}finally{loading(false)}}
@@ -437,6 +447,7 @@ async function enablePasskey(ownerType){
     const response=registrationCredentialJSON(cred);
     const y=await api('passkeyRegisterVerify',[{ownerType,token,response,deviceLabel:navigator.platform||'Dispositivo'}]);
     alert(y.message||'Acesso biométrico ativado.');
+    if(ownerType==='Leader')await loadLeader();else await loadAdmin();
   }catch(e){alert('Não foi possível ativar a biometria: '+(e.message||e))}
 }
 async function biometricLogin(ownerType,silent=false){
