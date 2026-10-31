@@ -88,7 +88,7 @@ select,input{width:100%;border:1px solid #cad6db;border-radius:12px;padding:11px
       <button class="tab" onclick="showAdminTab('couples',this)">Casais</button>
     </div>
     <div id="admin-services" class="card"><div class="section-title">Cultos</div><div id="adminServices"></div></div>
-    <div id="admin-leaders" class="card hidden"><div class="section-title">Vínculo ministerial</div><div id="adminLeaders" class="scroll"></div></div>
+    <div id="admin-leaders" class="card hidden"><div class="section-title">Lideranças</div><div id="adminLeaders" class="scroll"></div></div>
     <div id="admin-couples" class="card hidden">
       <div class="section-title">Vincular casal</div>
       <div class="grid">
@@ -123,6 +123,29 @@ select,input{width:100%;border:1px solid #cad6db;border-radius:12px;padding:11px
     <button id="backstagePinLoginBtn" class="btn hidden" onclick="loginBackstage()">Entrar com PIN</button>
   </div>
   <div id="backstageMsg" class="msg"></div>
+</div></div>
+
+<div class="modal" id="leaderEditModal"><div class="box">
+  <button class="close" onclick="closeModal('leaderEditModal')">×</button>
+  <h2 id="leaderEditTitle">Editar liderança</h2>
+  <p class="muted" id="leaderEditSubtitle"></p>
+  <input type="hidden" id="editLeaderId">
+  <div class="field" style="margin-top:12px">
+    <label>Vínculo ministerial</label>
+    <select id="editMinisterial">
+      <option value="Da Casa">Da Casa</option>
+      <option value="Não Reconhecido">Não Reconhecido</option>
+    </select>
+  </div>
+  <div class="field" style="margin-top:12px">
+    <label>Cônjuge</label>
+    <select id="editSpouse"></select>
+  </div>
+  <div class="row" style="margin-top:14px">
+    <button class="btn primary" onclick="saveLeaderEdit()">Salvar alterações</button>
+    <button class="btn danger" onclick="resetLeaderFromEdit()">Redefinir acesso</button>
+  </div>
+  <div id="leaderEditMsg" class="msg"></div>
 </div></div>
 
 <div class="modal" id="cancelModal"><div class="box">
@@ -298,13 +321,55 @@ function renderAdmin(){
     const latest=(adminData.runs||[]).find(x=>x.service_id===s.id&&x.status==='Concluída');
     return '<div class="service"><h3>'+esc(s.name)+'</h3><div class="meta">'+dt(s.starts_at)+'</div><div class="row"><span class="pill ok">'+c+' confirmados</span>'+(late?'<span class="pill bad">'+late+' cancelamento(s) tardio(s)</span>':'')+(latest?'<span class="pill">Distribuição '+latest.version+'</span>':'')+'</div><div class="row" style="margin-top:10px"><button class="btn primary" onclick="runAllocation(\''+s.id+'\')">'+(latest?'Refazer distribuição':'Fazer distribuição')+'</button><button class="btn" onclick="showAllocation(\''+s.id+'\')">Ver assentos</button></div></div>'
   }).join('');
-  qs('adminLeaders').innerHTML='<table class="admin-table"><thead><tr><th>Liderança</th><th>Vínculo</th><th>Acesso</th><th></th></tr></thead><tbody>'+(adminData.leaders||[]).map(l=>'<tr><td><strong>'+esc(l.displayName)+'</strong><br><span class="muted">'+esc(l.title)+'</span></td><td><select onchange="setMinisterial(\''+l.id+'\',this.value)"><option '+(l.ministerialLink==='Da Casa'?'selected':'')+'>Da Casa</option><option '+(l.ministerialLink==='Não Reconhecido'?'selected':'')+'>Não Reconhecido</option></select></td><td>'+(l.accessEnabled?'<span class="pill ok">Ativado</span>':'<span class="pill">Não ativado</span>')+'</td><td><button class="btn small" onclick="resetLeader(\''+l.id+'\')">Redefinir acesso</button></td></tr>').join('')+'</tbody></table>';
+  qs('adminLeaders').innerHTML='<table class="admin-table"><thead><tr><th>Liderança</th><th>Acesso</th><th></th></tr></thead><tbody>'+(adminData.leaders||[]).map(l=>'<tr><td><strong>'+esc(l.displayName)+'</strong><br><span class="muted">'+esc(l.title)+'</span></td><td>'+(l.accessEnabled?'<span class="pill ok">Ativado</span>':'<span class="pill">Não ativado</span>')+'</td><td><button class="btn small" onclick="openLeaderEdit(\''+l.id+'\')">Editar</button></td></tr>').join('')+'</tbody></table>';
 }
 async function runAllocation(id){if(!confirm('Executar a distribuição agora? Uma distribuição anterior ficará registrada no histórico.'))return;loading(true);try{const r=await api('runAllocation',[{token:backstageToken,serviceId:id}]);if(!r.ok)return alert(r.message);alert('Distribuição '+r.version+' concluída. '+r.assigned+' liderança(s) alocada(s).'+(r.unassigned.length?' '+r.unassigned.length+' sem assento.':''));await loadAdmin();await showAllocation(id)}catch(e){alert(e.message)}finally{loading(false)}}
 async function showAllocation(id){loading(true);try{const r=await api('getAllocation',[{token:backstageToken,serviceId:id}]);if(!r.run)return alert('Ainda não existe distribuição para este culto.');const lines=(r.allocations||[]).map(a=>'Assento '+String(a.seats?.seat_number||a.seat_id).padStart(2,'0')+' — '+(a.leaders?.display_name||'')).join('\n');alert('Distribuição '+r.run.version+'\n\n'+lines)}catch(e){alert(e.message)}finally{loading(false)}}
-async function setMinisterial(id,value){const r=await api('adminSetMinisterial',[{token:backstageToken,leaderId:id,value}]);if(!r.ok)alert(r.message);await loadAdmin()}
+function findCoupleForLeader(leaderUuid){
+  return (adminData.couples||[]).find(c=>c.leader_1_id===leaderUuid||c.leader_2_id===leaderUuid)||null;
+}
+function openLeaderEdit(id){
+  const l=(adminData.leaders||[]).find(x=>x.id===id);
+  if(!l)return;
+  qs('editLeaderId').value=id;
+  qs('leaderEditTitle').textContent=l.displayName;
+  qs('leaderEditSubtitle').textContent=l.title+' · '+(l.accessEnabled?'Acesso ativado':'Acesso não ativado');
+  qs('editMinisterial').value=l.ministerialLink||'Não Reconhecido';
+  const options=(adminData.leaders||[]).filter(x=>x.id!==id);
+  let currentSpouseId='';
+  const couple=findCoupleForLeader(l.uuid);
+  if(couple){
+    const spouseUuid=couple.leader_1_id===l.uuid?couple.leader_2_id:couple.leader_1_id;
+    const spouse=options.find(x=>x.uuid===spouseUuid);
+    if(spouse)currentSpouseId=spouse.id;
+  }
+  qs('editSpouse').innerHTML='<option value="">Sem vínculo</option>'+options.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.displayName)+' · '+esc(x.title||'')+'</option>').join('');
+  qs('editSpouse').value=currentSpouseId;
+  msg('leaderEditMsg','',false);
+  openModal('leaderEditModal');
+}
+async function saveLeaderEdit(){
+  const leaderId=qs('editLeaderId').value;
+  loading(true);
+  try{
+    const r=await api('adminUpdateLeaderProfile',[{token:backstageToken,leaderId,ministerialLink:qs('editMinisterial').value,spouseId:qs('editSpouse').value||null}]);
+    if(!r.ok)return msg('leaderEditMsg',r.message||'Não foi possível salvar.',true);
+    await loadAdmin();
+    closeModal('leaderEditModal');
+  }catch(e){msg('leaderEditMsg',e.message,true)}finally{loading(false)}
+}
+async function resetLeaderFromEdit(){
+  const id=qs('editLeaderId').value;
+  if(!confirm('Redefinir o acesso desta liderança? PIN, sessões e passkeys serão removidos.'))return;
+  loading(true);
+  try{
+    const r=await api('adminResetLeaderAccess',[{token:backstageToken,leaderId:id}]);
+    if(!r.ok)return msg('leaderEditMsg',r.message||'Não foi possível redefinir.',true);
+    await loadAdmin();
+    closeModal('leaderEditModal');
+  }catch(e){msg('leaderEditMsg',e.message,true)}finally{loading(false)}
+}
 async function saveCouple(){loading(true);try{const r=await api('adminLinkCouple',[{token:backstageToken,leader1Id:qs('couple1').value,leader2Id:qs('couple2').value}]);msg('coupleMsg',r.message,!r.ok);if(r.ok)await loadAdmin()}catch(e){msg('coupleMsg',e.message,true)}finally{loading(false)}}
-async function resetLeader(id){if(!confirm('Redefinir o acesso desta liderança? PIN, sessões e passkeys serão removidos.'))return;const r=await api('adminResetLeaderAccess',[{token:backstageToken,leaderId:id}]);alert(r.message);await loadAdmin()}
 function openCodeModal(){qs('newGlobalCode').value='';msg('codeMsg','',false);openModal('codeModal')}
 async function saveGlobalCode(){const r=await api('adminSetFirstAccessCode',[{token:backstageToken,code:qs('newGlobalCode').value}]);msg('codeMsg',r.message,!r.ok)}
 function b64urlToBuf(s){
