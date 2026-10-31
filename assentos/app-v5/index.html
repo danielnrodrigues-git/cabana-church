@@ -43,12 +43,12 @@ select,input{width:100%;border:1px solid #cad6db;border-radius:12px;padding:11px
     <div class="hero"><h1>Confirme sua presença</h1><p>Seu assento será definido automaticamente, respeitando as regras ministeriais, casais e o rodízio de posições.</p></div>
     <div class="card">
       <div class="section-title">Acesso da liderança</div>
-      <div class="field"><label>Selecione seu nome</label><select id="leaderSelect"><option value="">Carregando...</option></select></div>
-      <div class="field" style="margin-top:10px"><label>PIN de 6 dígitos</label><input id="leaderPin" inputmode="numeric" maxlength="6" type="password" placeholder="••••••"></div>
+      <div class="field"><label>Selecione seu nome</label><select id="leaderSelect" onchange="updateLeaderLoginState()"><option value="">Carregando...</option></select></div>
+      <div id="leaderPinWrap" class="field hidden" style="margin-top:10px"><label>PIN de 6 dígitos</label><input id="leaderPin" inputmode="numeric" maxlength="6" type="password" placeholder="••••••"></div>
       <div class="row" style="margin-top:12px">
-        <button class="btn primary" onclick="loginLeader()">Entrar</button>
-        <button class="btn" onclick="biometricLogin('Leader')">Entrar com biometria</button>
-        <button class="btn" onclick="openFirstAccess()">Primeiro acesso</button>
+        <button id="leaderLoginBtn" class="btn primary hidden" onclick="loginLeader()">Entrar</button>
+        <button id="leaderBioLoginBtn" class="btn hidden" onclick="biometricLogin('Leader')">Entrar com biometria</button>
+        <button id="leaderFirstAccessBtn" class="btn hidden" onclick="openFirstAccess()">Primeiro acesso</button>
       </div>
       <div id="loginMsg" class="msg"></div>
     </div>
@@ -59,7 +59,7 @@ select,input{width:100%;border:1px solid #cad6db;border-radius:12px;padding:11px
     <div class="card">
       <div class="row" style="justify-content:space-between">
         <div><div class="section-title">Seu acesso</div><div class="muted">PIN pessoal + acesso rápido no dispositivo</div></div>
-        <button class="btn" onclick="enablePasskey('Leader')">Ativar biometria</button>
+        <button id="enableLeaderPasskeyBtn" class="btn" onclick="enablePasskey('Leader')">Ativar biometria</button>
       </div>
     </div>
     <div class="card">
@@ -150,11 +150,22 @@ async function init(){
   loading(true);
   try{
     const b=await api('getV6Bootstrap');bootstrap=b;
-    fillSelect('leaderSelect',b.leaders);fillSelect('firstLeader',b.leaders);
+    fillSelect('leaderSelect',b.leaders);fillSelect('firstLeader',b.leaders);updateLeaderLoginState();
     fillSelect('couple1',b.leaders);fillSelect('couple2',b.leaders);
     qs('backstageUser').innerHTML='<option value="">Selecione...</option>'+b.backstageUsers.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+' · '+esc(x.profile)+'</option>').join('');
     if(backstageToken) await loadAdmin(); else if(leaderToken) await loadLeader();
   }catch(e){msg('loginMsg',e.message,true)}finally{loading(false)}
+}
+function updateLeaderLoginState(){
+  const id=qs('leaderSelect').value;
+  const leader=(bootstrap.leaders||[]).find(x=>x.id===id);
+  const selected=!!leader;
+  const active=!!(leader&&leader.accessEnabled);
+  qs('leaderPinWrap').classList.toggle('hidden',!active);
+  qs('leaderLoginBtn').classList.toggle('hidden',!active);
+  qs('leaderBioLoginBtn').classList.toggle('hidden',!active);
+  qs('leaderFirstAccessBtn').classList.toggle('hidden',!selected||active);
+  msg('loginMsg','',false);
 }
 function openFirstAccess(){qs('firstLeader').value=qs('leaderSelect').value;openModal('firstAccessModal')}
 async function doFirstAccess(){
@@ -169,6 +180,7 @@ async function loadLeader(){
   leaderHome=r;qs('publicView').classList.add('hidden');qs('adminView').classList.add('hidden');qs('leaderView').classList.remove('hidden');qs('logoutBtn').classList.remove('hidden');
   qs('welcomeLeader').textContent='Olá, '+r.leader.displayName;
   qs('leaderSubtitle').textContent=r.spouse?'Cônjuge vinculado: '+r.spouse.displayName:'Seu perfil está pronto para confirmar presença.';
+  qs('enableLeaderPasskeyBtn').classList.toggle('hidden',!!r.hasPasskey);
   renderLeaderServices();
 }
 function renderLeaderServices(){
@@ -295,7 +307,7 @@ async function biometricLogin(ownerType){
     if(ownerType==='Leader'){leaderToken=y.token;localStorage.setItem('v6LeaderToken',leaderToken);await loadLeader()}else{backstageToken=y.token;localStorage.setItem('v6BackstageToken',backstageToken);closeModal('backstageModal');await loadAdmin()}
   }catch(e){alert('Não foi possível usar a biometria: '+(e.message||e))}
 }
-function logoutAll(){leaderToken='';backstageToken='';leaderHome=null;adminData=null;localStorage.removeItem('v6LeaderToken');localStorage.removeItem('v6BackstageToken');qs('leaderView').classList.add('hidden');qs('adminView').classList.add('hidden');qs('publicView').classList.remove('hidden');qs('logoutBtn').classList.add('hidden')}
+function logoutAll(){leaderToken='';backstageToken='';leaderHome=null;adminData=null;localStorage.removeItem('v6LeaderToken');localStorage.removeItem('v6BackstageToken');qs('leaderView').classList.add('hidden');qs('adminView').classList.add('hidden');qs('publicView').classList.remove('hidden');qs('logoutBtn').classList.add('hidden');updateLeaderLoginState()}
 init();
 </script>
 </body>
