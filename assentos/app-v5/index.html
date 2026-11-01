@@ -159,7 +159,7 @@ main{width:min(480px,100%);padding:14px 10px 36px}
     <div class="card">
       <div class="row" style="justify-content:space-between">
         <div><div class="section-title">Seu acesso</div><div class="muted">PIN pessoal + acesso rápido no dispositivo</div></div>
-        <button id="enableLeaderPasskeyBtn" class="btn" onclick="enablePasskey('Leader')">Ativar biometria</button>
+        <button id="enableLeaderPasskeyBtn" class="btn" onclick="enablePasskey('Leader')">Ativar biometria neste dispositivo</button>
       </div>
     </div>
     <div class="card" id="spouseCard">
@@ -176,7 +176,7 @@ main{width:min(480px,100%);padding:14px 10px 36px}
     <div class="admin-headline"><p id="adminWho"></p></div>
     <div class="card">
       <div class="row">
-        <button id="enableBackstagePasskeyBtn" class="btn btn-backstage" onclick="enablePasskey('Backstage')">Ativar biometria</button>
+        <button id="enableBackstagePasskeyBtn" class="btn btn-backstage" onclick="enablePasskey('Backstage')">Ativar biometria neste dispositivo</button>
         <button class="btn btn-backstage" onclick="openLegacyAdmin()">Painel de administração</button>
         <button class="btn btn-backstage" onclick="openCodeModal()">Código de primeiro acesso</button>
       </div>
@@ -372,7 +372,7 @@ async function loadLeader(){
   leaderHome=r;qs('publicView').classList.add('hidden');qs('adminView').classList.add('hidden');qs('leaderView').classList.remove('hidden');qs('logoutBtn').classList.remove('hidden');
   qs('welcomeLeader').textContent='Olá, '+r.leader.displayName;
   qs('leaderSubtitle').textContent=r.spouse?'Cônjuge vinculado: '+r.spouse.displayName:'Seu perfil está pronto para confirmar presença.';
-  qs('enableLeaderPasskeyBtn').classList.toggle('hidden',!!r.hasPasskey);
+  qs('enableLeaderPasskeyBtn').classList.remove('hidden');
   renderSpouseCard();
   renderLeaderServices();
 }
@@ -488,7 +488,7 @@ function openBackstageLogin(){updateBackstageLoginState();openModal('backstageMo
 async function loginBackstage(){loading(true);try{const r=await api('loginBackstage',[{userId:qs('backstageUser').value,pin:qs('backstagePin').value}]);if(!r.ok)return msg('backstageMsg',r.message,true);backstageToken=r.token;localStorage.setItem('v6BackstageToken',backstageToken);closeModal('backstageModal');await loadAdmin()}catch(e){msg('backstageMsg',e.message,true)}finally{loading(false)}}
 async function loadAdmin(){
   const r=await api('getAdminDashboard',[backstageToken]);if(!r.ok){backstageToken='';localStorage.removeItem('v6BackstageToken');return}
-  adminData=r;qs('publicView').classList.add('hidden');qs('leaderView').classList.add('hidden');qs('adminView').classList.remove('hidden');qs('logoutBtn').classList.remove('hidden');qs('adminWho').textContent='Logado como '+r.user.name+' · '+r.user.profile;qs('enableBackstagePasskeyBtn').classList.toggle('hidden',!!r.user.hasPasskey);renderAdmin();
+  adminData=r;qs('publicView').classList.add('hidden');qs('leaderView').classList.add('hidden');qs('adminView').classList.remove('hidden');qs('logoutBtn').classList.remove('hidden');qs('adminWho').textContent='Logado como '+r.user.name+' · '+r.user.profile;qs('enableBackstagePasskeyBtn').classList.remove('hidden');renderAdmin();
 }
 function showAdminTab(name,el){['services','leaders','couples'].forEach(x=>qs('admin-'+x).classList.toggle('hidden',x!==name));document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));el.classList.add('active')}
 function renderAdmin(){
