@@ -46,7 +46,15 @@ body{background:#f4f6f8}.hero{text-align:center;padding:28px 12px 10px}.hero h1{
   .field{min-width:100%}
   .hero h1{font-size:24px}
   .row .btn{flex:1}
-  .v5-header{min-height:118px;padding-right:118px}
+  .v5-header{min-height:118px;padding:12px 10px;position:relative}
+  .v5-header .brand-lockup{
+    position:absolute;
+    left:50%;
+    top:50%;
+    transform:translate(-50%,-50%);
+    margin:0;
+    z-index:1;
+  }
   .v5-header .actions{
     right:10px;
     top:50%;
@@ -55,9 +63,9 @@ body{background:#f4f6f8}.hero{text-align:center;padding:28px 12px 10px}.hero h1{
     align-items:stretch;
     gap:8px;
     width:96px;
+    z-index:2;
   }
   .v5-header .actions .header-btn{width:100%;min-width:0;padding:10px 8px}
-  .brand-lockup{margin-right:12px}
   .brand-name{font-size:23px}
   .brand-mark{width:60px}
   .brand-church{font-size:10px}
