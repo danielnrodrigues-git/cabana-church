@@ -143,6 +143,11 @@ main{width:min(480px,100%);padding:14px 10px 36px}
 </header>
 <main>
   <section id="publicView">
+    <div id="installAppCard" class="card hidden">
+      <div class="section-title">Tenha o Meu Assento na sua tela inicial</div>
+      <div class="muted" style="margin-bottom:10px">Acesse confirmações, assentos e notificações com apenas um toque.</div>
+      <button class="btn primary" style="width:100%" onclick="openInstallHelp()">Instalar Meu Assento</button>
+    </div>
     <div class="hero"><h1>Presença no altar</h1><p>Confirme sua participação para servir com excelência.</p></div>
     <div class="card">
       <div class="section-title">Acesso da liderança</div>
@@ -209,6 +214,13 @@ main{width:min(480px,100%);padding:14px 10px 36px}
   </section>
 </main>
 <div class="app-version">Versão 6.0</div>
+
+<div class="modal" id="installHelpModal"><div class="box">
+  <button class="close" onclick="closeModal('installHelpModal')">×</button>
+  <h2>Instalar Meu Assento</h2>
+  <div id="installHelpContent" class="muted" style="line-height:1.55"></div>
+  <button id="installNativeBtn" class="btn primary hidden" style="margin-top:14px;width:100%" onclick="triggerNativeInstall()">Instalar agora</button>
+</div></div>
 
 <div class="modal" id="firstAccessModal"><div class="box">
   <button class="close" onclick="closeModal('firstAccessModal')">×</button>
@@ -296,6 +308,37 @@ async function api(method,args=[]){const r=await fetch(API,{method:'POST',header
 function dt(s){try{return new Date(s).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'})}catch{return s}}
 function serviceName(s){return (s.name||'Culto')+' · '+dt(s.starts_at)}
 function fillSelect(id,rows,valueKey='id',labelKey='displayName',blank='Selecione...'){qs(id).innerHTML='<option value="">'+blank+'</option>'+rows.map(x=>'<option value="'+esc(x[valueKey])+'">'+esc(x[labelKey])+'</option>').join('')}
+function isStandaloneApp(){
+  return !!(window.matchMedia?.('(display-mode: standalone)')?.matches||navigator.standalone===true);
+}
+function updateInstallCard(){
+  const card=qs('installAppCard');if(!card)return;
+  card.classList.toggle('hidden',isStandaloneApp());
+}
+function openInstallHelp(){
+  const isiOS=/iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const isAndroid=/Android/i.test(navigator.userAgent);
+  const content=qs('installHelpContent'),btn=qs('installNativeBtn');
+  btn.classList.add('hidden');
+  if(isiOS){
+    content.innerHTML='<strong>No iPhone/iPad:</strong><br>1. Toque no botão <strong>Compartilhar</strong> do Safari.<br>2. Role a lista e toque em <strong>Adicionar à Tela de Início</strong>.<br>3. Ative <strong>Abrir como App da Web</strong>, se essa opção aparecer.<br>4. Toque em <strong>Adicionar</strong>.<br><br>Depois, abra o Meu Assento pelo novo ícone da Tela de Início.';
+  }else if(isAndroid){
+    content.innerHTML='<strong>No Android:</strong><br>Toque em <strong>Instalar agora</strong>. Se o navegador não oferecer a instalação, abra o menu do navegador e escolha <strong>Instalar app</strong> ou <strong>Adicionar à tela inicial</strong>.';
+    if(deferredInstallPrompt)btn.classList.remove('hidden');
+  }else{
+    content.innerHTML='<strong>No computador:</strong><br>Use a opção de instalação do navegador quando disponível. No Chrome/Edge, procure o ícone de instalação na barra de endereço ou no menu.';
+    if(deferredInstallPrompt)btn.classList.remove('hidden');
+  }
+  openModal('installHelpModal');
+}
+async function triggerNativeInstall(){
+  if(!deferredInstallPrompt)return;
+  deferredInstallPrompt.prompt();
+  try{await deferredInstallPrompt.userChoice}catch(e){}
+  deferredInstallPrompt=null;
+  updateInstallCard();
+  closeModal('installHelpModal');
+}
 function pushSupported(){return !!('serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window)}
 function pushKeyToBytes(s){
   const pad='='.repeat((4-s.length%4)%4),base=(s+pad).replace(/-/g,'+').replace(/_/g,'/');
@@ -363,6 +406,7 @@ async function enablePushNotifications(ownerType='Leader'){
 }
 async function init(){
   registerPushWorker();
+  updateInstallCard();
   loading(true);
   try{
     const b=await api('getV6Bootstrap');bootstrap=b;
