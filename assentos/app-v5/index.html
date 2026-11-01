@@ -26,6 +26,7 @@ select,input{width:100%;border:1px solid #cad6db;border-radius:12px;padding:11px
 .admin-table{width:100%;border-collapse:collapse;font-size:12px}.admin-table th,.admin-table td{padding:8px;border-bottom:1px solid #edf1f3;text-align:left}.scroll{overflow:auto}
 .modal{position:fixed;inset:0;background:rgba(10,20,28,.55);display:none;place-items:center;padding:15px;z-index:70}.modal.show{display:grid}.box{width:min(470px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:20px;padding:18px}.box h2{margin:0 0 5px}.close{float:right;border:0;background:#eef2f4;border-radius:50%;width:34px;height:34px;font-size:20px}
 .loading{position:fixed;inset:0;background:rgba(255,255,255,.72);display:none;place-items:center;z-index:100;font-weight:900}.loading.show{display:grid}
+.autocomplete{position:relative}.autocomplete-list{display:none;position:absolute;left:0;right:0;top:100%;z-index:60;background:#fff;border:1px solid #cad6db;border-radius:12px;box-shadow:0 10px 24px rgba(23,32,51,.12);max-height:260px;overflow:auto;margin-top:4px}.autocomplete-list.show{display:block}.autocomplete-item{padding:10px 12px;cursor:pointer;border-bottom:1px solid #edf1f3}.autocomplete-item:last-child{border-bottom:0}.autocomplete-item:hover{background:#f4f7f8}.identity-row{display:flex;align-items:center;justify-content:space-between;gap:10px}.identity-name{font-weight:900;font-size:16px}
 @media(max-width:650px){.grid{grid-template-columns:1fr}.field{min-width:100%}.hero h1{font-size:24px}.row .btn{flex:1}}
 </style>
 </head>
@@ -43,7 +44,8 @@ select,input{width:100%;border:1px solid #cad6db;border-radius:12px;padding:11px
     <div class="hero"><h1>Confirme sua presença</h1><p>Seu assento será definido automaticamente, respeitando as regras ministeriais, casais e o rodízio de posições.</p></div>
     <div class="card">
       <div class="section-title">Acesso da liderança</div>
-      <div class="field"><label>Selecione seu nome</label><select id="leaderSelect" onchange="updateLeaderLoginState()"><option value="">Carregando...</option></select></div>
+      <div id="leaderSearchWrap" class="field autocomplete"><label>Busque seu nome</label><input id="leaderSearch" autocomplete="off" placeholder="Digite seu nome..." oninput="filterLeaderAutocomplete()" onfocus="filterLeaderAutocomplete()"><input type="hidden" id="leaderSelect"><div id="leaderAutocomplete" class="autocomplete-list"></div></div>
+      <div id="rememberedLeaderWrap" class="identity-row hidden"><div><div class="muted">Este dispositivo</div><div id="rememberedLeaderName" class="identity-name"></div></div><button class="btn small" onclick="changeRememberedLeader()">Trocar usuário</button></div>
       <div id="leaderPinWrap" class="field hidden" style="margin-top:10px"><label>PIN de 6 dígitos</label><input id="leaderPin" inputmode="numeric" maxlength="6" type="password" placeholder="••••••"></div>
       <div class="row" style="margin-top:12px">
         <button id="leaderLoginBtn" class="btn primary hidden" onclick="smartLeaderLogin()">Entrar</button>
@@ -191,12 +193,52 @@ async function init(){
   loading(true);
   try{
     const b=await api('getV6Bootstrap');bootstrap=b;
-    fillSelect('leaderSelect',b.leaders);fillSelect('firstLeader',b.leaders);updateLeaderLoginState();
+    fillSelect('firstLeader',b.leaders);restoreRememberedLeader();updateLeaderLoginState();
     fillSelect('couple1',b.leaders);fillSelect('couple2',b.leaders);
     qs('backstageUser').innerHTML='<option value="">Selecione...</option>'+b.backstageUsers.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+' · '+esc(x.profile)+'</option>').join('');
     updateBackstageLoginState();
     if(backstageToken) await loadAdmin(); else if(leaderToken) await loadLeader();
   }catch(e){msg('loginMsg',e.message,true)}finally{loading(false)}
+}
+function normalizeText(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim()}
+function filterLeaderAutocomplete(){
+  const q=normalizeText(qs('leaderSearch').value);
+  const rows=(bootstrap.leaders||[]).filter(x=>!q||normalizeText(x.displayName).includes(q)).slice(0,12);
+  qs('leaderAutocomplete').innerHTML=rows.map(x=>'<div class="autocomplete-item" onclick="selectLeader(\''+x.id+'\')"><strong>'+esc(x.displayName)+'</strong><div class="muted">'+esc(x.title||'')+'</div></div>').join('')||'<div class="autocomplete-item muted">Nenhum nome encontrado.</div>';
+  qs('leaderAutocomplete').classList.add('show');
+}
+function selectLeader(id){
+  const leader=(bootstrap.leaders||[]).find(x=>x.id===id);if(!leader)return;
+  qs('leaderSelect').value=id;
+  qs('leaderSearch').value=leader.displayName;
+  qs('leaderAutocomplete').classList.remove('show');
+  updateLeaderLoginState();
+}
+function rememberLeader(id){
+  if(id)localStorage.setItem('v6RememberedLeaderId',id);
+}
+function restoreRememberedLeader(){
+  const id=localStorage.getItem('v6RememberedLeaderId')||'';
+  const leader=(bootstrap.leaders||[]).find(x=>x.id===id);
+  if(!leader){
+    qs('leaderSearchWrap').classList.remove('hidden');
+    qs('rememberedLeaderWrap').classList.add('hidden');
+    qs('leaderSelect').value='';
+    return;
+  }
+  qs('leaderSelect').value=id;
+  qs('rememberedLeaderName').textContent=leader.displayName;
+  qs('leaderSearchWrap').classList.add('hidden');
+  qs('rememberedLeaderWrap').classList.remove('hidden');
+}
+function changeRememberedLeader(){
+  localStorage.removeItem('v6RememberedLeaderId');
+  qs('leaderSelect').value='';
+  qs('leaderSearch').value='';
+  qs('leaderSearchWrap').classList.remove('hidden');
+  qs('rememberedLeaderWrap').classList.add('hidden');
+  updateLeaderLoginState();
+  setTimeout(()=>qs('leaderSearch').focus(),50);
 }
 function updateLeaderLoginState(){
   const id=qs('leaderSelect').value;
@@ -215,7 +257,7 @@ function updateLeaderLoginState(){
 function openFirstAccess(){qs('firstLeader').value=qs('leaderSelect').value;openModal('firstAccessModal')}
 async function doFirstAccess(){
   const a=qs('firstPin').value,b=qs('firstPin2').value;if(a!==b)return msg('firstMsg','Os PINs não conferem.',true);
-  loading(true);try{const r=await api('firstAccess',[{leaderId:qs('firstLeader').value,code:qs('firstCode').value,pin:a}]);if(!r.ok)return msg('firstMsg',r.message,true);leaderToken=r.token;localStorage.setItem('v6LeaderToken',leaderToken);closeModal('firstAccessModal');await loadLeader();setTimeout(()=>{if(confirm('Deseja ativar Face ID, digital ou desbloqueio do aparelho neste dispositivo?'))enablePasskey('Leader')},200)}catch(e){msg('firstMsg',e.message,true)}finally{loading(false)}
+  loading(true);try{const r=await api('firstAccess',[{leaderId:qs('firstLeader').value,code:qs('firstCode').value,pin:a}]);if(!r.ok)return msg('firstMsg',r.message,true);leaderToken=r.token;localStorage.setItem('v6LeaderToken',leaderToken);rememberLeader(qs('firstLeader').value);closeModal('firstAccessModal');await loadLeader();setTimeout(()=>{if(confirm('Deseja ativar Face ID, digital ou desbloqueio do aparelho neste dispositivo?'))enablePasskey('Leader')},200)}catch(e){msg('firstMsg',e.message,true)}finally{loading(false)}
 }
 async function smartLeaderLogin(){
   const id=qs('leaderSelect').value;
@@ -235,7 +277,7 @@ async function smartLeaderLogin(){
   qs('leaderLoginBtn').classList.add('hidden');
 }
 async function loginLeader(){
-  loading(true);try{const r=await api('loginLeader',[{leaderId:qs('leaderSelect').value,pin:qs('leaderPin').value}]);if(!r.ok){if(r.code==='FIRST_ACCESS_REQUIRED')openFirstAccess();return msg('loginMsg',r.message,true)}leaderToken=r.token;localStorage.setItem('v6LeaderToken',leaderToken);await loadLeader()}catch(e){msg('loginMsg',e.message,true)}finally{loading(false)}
+  loading(true);try{const r=await api('loginLeader',[{leaderId:qs('leaderSelect').value,pin:qs('leaderPin').value}]);if(!r.ok){if(r.code==='FIRST_ACCESS_REQUIRED')openFirstAccess();return msg('loginMsg',r.message,true)}leaderToken=r.token;localStorage.setItem('v6LeaderToken',leaderToken);rememberLeader(qs('leaderSelect').value);await loadLeader()}catch(e){msg('loginMsg',e.message,true)}finally{loading(false)}
 }
 async function loadLeader(){
   const r=await api('getLeaderHome',[leaderToken]);if(!r.ok){leaderToken='';localStorage.removeItem('v6LeaderToken');return}
@@ -516,11 +558,12 @@ async function biometricLogin(ownerType,silent=false){
     if(!cred)throw new Error('Autenticação biométrica cancelada.');
     const response=authenticationCredentialJSON(cred);
     const y=await api('passkeyAuthVerify',[{ownerType,ownerId,response}]);if(!y.ok){if(!silent)alert(y.message);return false}
-    if(ownerType==='Leader'){leaderToken=y.token;localStorage.setItem('v6LeaderToken',leaderToken);await loadLeader()}else{backstageToken=y.token;localStorage.setItem('v6BackstageToken',backstageToken);closeModal('backstageModal');await loadAdmin()}
+    if(ownerType==='Leader'){leaderToken=y.token;localStorage.setItem('v6LeaderToken',leaderToken);rememberLeader(qs('leaderSelect').value);await loadLeader()}else{backstageToken=y.token;localStorage.setItem('v6BackstageToken',backstageToken);closeModal('backstageModal');await loadAdmin()}
     return true;
   }catch(e){if(!silent)alert('Não foi possível usar a biometria: '+(e.message||e));return false}
 }
-function logoutAll(){leaderToken='';backstageToken='';leaderHome=null;adminData=null;localStorage.removeItem('v6LeaderToken');localStorage.removeItem('v6BackstageToken');qs('leaderView').classList.add('hidden');qs('adminView').classList.add('hidden');qs('publicView').classList.remove('hidden');qs('logoutBtn').classList.add('hidden');updateLeaderLoginState()}
+function logoutAll(){leaderToken='';backstageToken='';leaderHome=null;adminData=null;localStorage.removeItem('v6LeaderToken');localStorage.removeItem('v6BackstageToken');qs('leaderView').classList.add('hidden');qs('adminView').classList.add('hidden');qs('publicView').classList.remove('hidden');qs('logoutBtn').classList.add('hidden');restoreRememberedLeader();updateLeaderLoginState()}
+document.addEventListener('click',e=>{if(!e.target.closest('#leaderSearchWrap'))qs('leaderAutocomplete')?.classList.remove('show')});
 init();
 </script>
 </body>
