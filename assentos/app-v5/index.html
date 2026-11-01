@@ -435,6 +435,11 @@ async function openLegacyAdmin(){
     window.open('./admin-v5.html','_blank');
   }catch(e){alert(e.message||e)}finally{loading(false)}
 }
+function openLegacyAdmin(){
+  if(!backstageToken){alert('Sua sessão Backstage expirou. Entre novamente.');return}
+  localStorage.setItem('meuAssentoV5BackstageToken',backstageToken);
+  window.open('./admin-v5.html?admin=1','_blank');
+}
 function openCodeModal(){qs('newGlobalCode').value='';msg('codeMsg','',false);openModal('codeModal')}
 async function saveGlobalCode(){const r=await api('adminSetFirstAccessCode',[{token:backstageToken,code:qs('newGlobalCode').value}]);msg('codeMsg',r.message,!r.ok)}
 function b64urlToBuf(s){
