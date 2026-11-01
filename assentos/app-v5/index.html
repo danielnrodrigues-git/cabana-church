@@ -332,8 +332,18 @@ async function enablePushNotifications(ownerType='Leader'){
   if(!pushSupported())return alert('Este navegador ou dispositivo não oferece suporte a notificações push.');
   if(!token)return alert('Entre no seu perfil antes de ativar as notificações.');
   try{
+    const standalone=window.matchMedia?.('(display-mode: standalone)')?.matches||navigator.standalone===true;
+    const isiOS=/iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if(isiOS&&!standalone){
+      return alert('No iPhone, as notificações do Meu Assento só podem ser ativadas pelo aplicativo aberto através do ícone da Tela de Início. Abra o Meu Assento pelo ícone e tente novamente.');
+    }
     const permission=await Notification.requestPermission();
-    if(permission!=='granted')return alert('As notificações não foram autorizadas neste dispositivo.');
+    if(permission==='denied'){
+      return alert('As notificações estão bloqueadas neste dispositivo. No iPhone, abra Ajustes > Notificações > Meu Assento e permita as notificações. Depois volte ao aplicativo e tente novamente.');
+    }
+    if(permission!=='granted'){
+      return alert('A autorização de notificações não foi concluída. Tente novamente pelo ícone do Meu Assento na Tela de Início.');
+    }
     await registerPushWorker();
     const reg=await navigator.serviceWorker.ready;
     let sub=await reg.pushManager.getSubscription();
