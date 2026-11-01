@@ -664,11 +664,28 @@ async function enablePasskey(ownerType){
     if(btn)btn.classList.add('hidden');
     alert(y.message||'Acesso biométrico ativado.');
     if(ownerType==='Leader')await loadLeader();else await loadAdmin();
-  }catch(e){alert('Não foi possível ativar a biometria: '+(e.message||e))}
+  }catch(e){
+    const name=e&&e.name?String(e.name):'';
+    const msgTxt=e&&e.message?String(e.message):String(e||'');
+    if(name==='InvalidStateError'||/invalid state/i.test(msgTxt)){
+      const ownerId=ownerType==='Leader'?(leaderHome?.leader?.id||qs('leaderSelect').value):(adminData?.user?.id||qs('backstageUser').value);
+      const ok=await biometricLogin(ownerType,true,ownerId);
+      if(ok){
+        markDevicePasskey(ownerType,ownerId);
+        const btn=ownerType==='Leader'?qs('enableLeaderPasskeyBtn'):qs('enableBackstagePasskeyBtn');
+        if(btn)btn.classList.add('hidden');
+        alert('Biometria já estava cadastrada neste dispositivo e foi reconhecida com sucesso.');
+        return;
+      }
+      alert('Já existe uma biometria/passkey cadastrada, mas não foi possível validá-la neste dispositivo. Entre com PIN e tente novamente.');
+      return;
+    }
+    alert('Não foi possível ativar a biometria: '+msgTxt);
+  }
 }
-async function biometricLogin(ownerType,silent=false){
+async function biometricLogin(ownerType,silent=false,ownerOverride=''){
   if(!webAuthnAvailable()){if(!silent)alert('Este navegador ou dispositivo não oferece suporte a biometria/passkeys.');return false}
-  const ownerId=ownerType==='Leader'?qs('leaderSelect').value:qs('backstageUser').value;if(!ownerId){if(!silent)alert('Selecione seu usuário primeiro.');return false}
+  const ownerId=ownerOverride||(ownerType==='Leader'?qs('leaderSelect').value:qs('backstageUser').value);if(!ownerId){if(!silent)alert('Selecione seu usuário primeiro.');return false}
   try{
     const x=await api('passkeyAuthOptions',[{ownerType,ownerId}]);if(!x.ok){if(!silent)alert(x.message);return false}
     const cred=await navigator.credentials.get({publicKey:publicKeyRequestOptions(x.options)});
