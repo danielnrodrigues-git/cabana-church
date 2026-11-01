@@ -70,6 +70,45 @@ body{background:#f4f6f8}.hero{text-align:center;padding:28px 12px 10px}.hero h1{
   .brand-mark{width:60px}
   .brand-church{font-size:10px}
 }
+/* force-mobile-layout */
+main{width:min(480px,100%);padding:14px 10px 36px}
+#adminView,#leaderView,#publicView{max-width:480px;margin:0 auto}
+#adminView .hero,#leaderView .hero,#publicView .hero{max-width:480px;margin:0 auto}
+.grid{grid-template-columns:1fr}
+.field{min-width:100%}
+.hero h1{font-size:24px}
+.row .btn{flex:1}
+.v5-header{min-height:118px;padding:12px 10px;position:relative}
+.v5-header .brand-lockup{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  margin:0;
+  z-index:1;
+}
+.v5-header .actions{
+  right:10px;
+  top:50%;
+  transform:translateY(-50%);
+  flex-direction:column;
+  align-items:stretch;
+  gap:8px;
+  width:96px;
+  z-index:2;
+}
+.v5-header .actions .header-btn{width:100%;min-width:0;padding:10px 8px}
+.brand-name{font-size:23px}
+.brand-mark{width:60px}
+.brand-church{font-size:10px}
+.tabs{overflow-x:auto}
+.admin-table{font-size:11px}
+.service{padding:13px}
+@media(min-width:651px){
+  body{padding:0}
+  .v5-header{width:min(480px,100%);margin:0 auto}
+  main{box-shadow:0 0 0 1px rgba(0,0,0,.02)}
+}
 </style>
 </head>
 <body>
