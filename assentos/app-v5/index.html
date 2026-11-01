@@ -27,13 +27,33 @@ select,input{width:100%;border:1px solid #cad6db;border-radius:12px;padding:11px
 .modal{position:fixed;inset:0;background:rgba(10,20,28,.55);display:none;place-items:center;padding:15px;z-index:70}.modal.show{display:grid}.box{width:min(470px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:20px;padding:18px}.box h2{margin:0 0 5px}.close{float:right;border:0;background:#eef2f4;border-radius:50%;width:34px;height:34px;font-size:20px}
 .loading{position:fixed;inset:0;background:rgba(255,255,255,.72);display:none;place-items:center;z-index:100;font-weight:900}.loading.show{display:grid}
 .autocomplete{position:relative}.autocomplete-list{display:none;position:absolute;left:0;right:0;top:100%;z-index:60;background:#fff;border:1px solid #cad6db;border-radius:12px;box-shadow:0 10px 24px rgba(23,32,51,.12);max-height:260px;overflow:auto;margin-top:4px}.autocomplete-list.show{display:block}.autocomplete-item{padding:10px 12px;cursor:pointer;border-bottom:1px solid #edf1f3}.autocomplete-item:last-child{border-bottom:0}.autocomplete-item:hover{background:#f4f7f8}.identity-row{display:flex;align-items:center;justify-content:space-between;gap:10px}.identity-name{font-weight:900;font-size:16px}
-@media(max-width:650px){.grid{grid-template-columns:1fr}.field{min-width:100%}.hero h1{font-size:24px}.row .btn{flex:1}}
+.v5-header{min-height:110px;background:#58aeba;display:flex;align-items:center;justify-content:center;position:relative;padding:12px 18px;border-bottom:0}
+.v5-header .actions{position:absolute;right:18px;top:50%;transform:translateY(-50%);display:flex;gap:8px}
+.brand-lockup{text-align:center;color:#fff;line-height:1}.brand-mark{display:block;width:72px;height:28px;margin:0 auto 4px}.brand-name{font-size:28px;font-weight:900;letter-spacing:1px}.brand-church{font-size:12px;font-weight:900;letter-spacing:3px;margin-top:4px}
+body{background:#f4f6f8}.hero{text-align:center;padding:28px 12px 10px}.hero h1{font-size:30px;color:#172033}.hero p{color:#697586}
+.card{border-radius:18px;border:1px solid #dbe3e7;box-shadow:0 10px 26px rgba(23,32,51,.06);background:#fff}
+.section-title{font-size:18px;font-weight:900;color:#172033}
+.btn{border-radius:12px;font-weight:800}.btn.primary{background:#1eaeb9;border-color:#1eaeb9}.btn.primary:hover{background:#168f99;border-color:#168f99}
+.tabs{background:#fff;border:1px solid #dbe3e7;border-radius:14px;padding:6px;gap:6px;box-shadow:0 6px 18px rgba(23,32,51,.05)}
+.tab{border-radius:10px}.tab.active{background:#172033;color:#fff}
+.service{border:1px solid #e0e6e9;border-radius:16px;background:#fff}
+.env{background:#8a4b08;color:#fff;text-align:center;padding:7px;font-weight:900;letter-spacing:.6px}
+#adminView .hero,#leaderView .hero,#publicView .hero{max-width:900px;margin:0 auto}
+#adminView,#leaderView,#publicView{max-width:1180px;margin:0 auto}
+#adminView>.card,#leaderView>.card,#publicView>.card{margin-left:auto;margin-right:auto}
+@media(max-width:650px){.grid{grid-template-columns:1fr}.field{min-width:100%}.hero h1{font-size:24px}.row .btn{flex:1}.v5-header{min-height:92px}.v5-header .actions{right:10px}.brand-name{font-size:23px}.brand-mark{width:60px}.brand-church{font-size:10px}}
 </style>
 </head>
 <body>
 <div class="env">AMBIENTE DE HOMOLOGAÇÃO — V6</div>
-<header>
-  <div class="brand">CABANA<small>CHURCH · MEU ASSENTO</small></div>
+<header class="v5-header">
+  <div class="brand-lockup" aria-label="Cabana Church">
+    <svg class="brand-mark" viewBox="0 0 120 42" aria-hidden="true">
+      <path d="M18 27 L51 7 Q60 2 69 7 L102 27 Q106 30 102 35 Q99 39 94 36 L65 19 Q60 16 55 19 L35 31 H61 Q65 31 68 34 L72 38 H33 Q27 38 22 34 L18 31 Q15 29 18 27Z" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div class="brand-name">CABANA</div>
+    <div class="brand-church">CHURCH</div>
+  </div>
   <div class="actions">
     <button class="header-btn btn-backstage" onclick="openBackstageLogin()">Backstage</button>
     <button class="header-btn hidden" id="logoutBtn" onclick="logoutAll()">Sair</button>
