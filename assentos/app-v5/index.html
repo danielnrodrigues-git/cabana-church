@@ -740,7 +740,7 @@ async function openLegacyAdmin(){
     const r=await api('createLegacyAdminSession',[{token:backstageToken}]);
     if(!r.ok)return alert(r.message||'Não foi possível abrir a administração completa.');
     localStorage.setItem('meuAssentoV5BackstageToken',r.token);
-    window.open('./admin-v5.html?admin=1','_blank');
+    location.href='./admin.html?admin=1';
   }catch(e){alert(e.message||e)}finally{loading(false)}
 }
 function openCodeModal(){qs('newGlobalCode').value='';msg('codeMsg','',false);openModal('codeModal')}
