@@ -37,6 +37,16 @@ body{background:#f4f6f8}.hero{text-align:center;padding:28px 12px 10px}.hero h1{
 .tabs{background:#fff;border:1px solid #dbe3e7;border-radius:14px;padding:6px;gap:6px;box-shadow:0 6px 18px rgba(23,32,51,.05)}
 .tab{border-radius:10px}.tab.active{background:#172033;color:#fff}
 .service{border:1px solid #e0e6e9;border-radius:16px;background:#fff}
+.confirmed-list{margin-top:10px;border-top:1px solid #e8eef1;padding-top:8px}
+.confirmed-list details{border:0}
+.confirmed-list summary{cursor:pointer;list-style:none;font-size:12px;font-weight:850;color:#168f99;display:flex;align-items:center;justify-content:space-between;padding:4px 0}
+.confirmed-list summary::-webkit-details-marker{display:none}
+.confirmed-list summary::after{content:"▾";font-size:13px;color:#7b8790}
+.confirmed-list details[open] summary::after{content:"▴"}
+.confirmed-names{display:grid;gap:6px;padding:8px 0 2px}
+.confirmed-person{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 9px;background:#f6f9fa;border-radius:10px;font-size:12px}
+.confirmed-person strong{font-size:12px}
+.confirmed-empty{padding:7px 0;color:#7b8790;font-size:12px}
 .env{background:#8a4b08;color:#fff;text-align:center;padding:7px;font-weight:900;letter-spacing:.6px}
 #adminView .hero,#leaderView .hero,#publicView .hero{max-width:900px;margin:0 auto}
 #adminView,#leaderView,#publicView{max-width:1180px;margin:0 auto}
@@ -484,11 +494,18 @@ async function loadAdmin(){
 }
 function showAdminTab(name,el){['services','leaders','couples'].forEach(x=>qs('admin-'+x).classList.toggle('hidden',x!==name));document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));el.classList.add('active')}
 function renderAdmin(){
+  const leaderByUuid={};
+  (adminData.leaders||[]).forEach(l=>leaderByUuid[l.uuid]=l);
   qs('adminServices').innerHTML=(adminData.services||[]).map(s=>{
-    const c=(adminData.confirmations||[]).filter(x=>x.service_id===s.id&&x.status==='Confirmado').length;
+    const confirmed=(adminData.confirmations||[]).filter(x=>x.service_id===s.id&&x.status==='Confirmado');
+    const c=confirmed.length;
     const late=(adminData.confirmations||[]).filter(x=>x.service_id===s.id&&x.status==='Cancelado'&&x.late_cancellation).length;
     const latest=(adminData.runs||[]).find(x=>x.service_id===s.id&&x.status==='Concluída');
-    return '<div class="service"><h3>'+esc(s.name)+'</h3><div class="meta">'+dt(s.starts_at)+'</div><div class="row"><span class="pill '+(s.status==='Aberto'?'ok':s.status==='Fechado'?'bad':'')+'">'+esc(s.status)+'</span><span class="pill ok">'+c+' confirmados</span>'+(late?'<span class="pill bad">'+late+' cancelamento(s) tardio(s)</span>':'')+(latest?'<span class="pill">Distribuição '+latest.version+'</span>':'')+'</div><div class="row" style="margin-top:10px"><button class="btn '+(s.status==='Aberto'?'danger':'primary')+'" onclick="setServiceConfirmationStatus(\''+s.id+'\',\''+(s.status==='Aberto'?'Fechado':'Aberto')+'\')">'+(s.status==='Aberto'?'Fechar confirmações':'Liberar confirmações')+'</button><button class="btn primary" onclick="runAllocation(\''+s.id+'\')">'+(latest?'Refazer distribuição':'Fazer distribuição')+'</button><button class="btn" onclick="showAllocation(\''+s.id+'\')">Ver assentos</button></div></div>'
+    const confirmedHtml=c
+      ? '<div class="confirmed-names">'+confirmed.map(x=>{const l=leaderByUuid[x.leader_id];return '<div class="confirmed-person"><strong>'+esc(l?.displayName||'Liderança')+'</strong><span class="muted">'+esc(l?.title||'')+'</span></div>'}).join('')+'</div>'
+      : '<div class="confirmed-empty">Nenhuma presença confirmada até o momento.</div>';
+    const list='<div class="confirmed-list"><details><summary>Ver confirmados ('+c+')</summary>'+confirmedHtml+'</details></div>';
+    return '<div class="service"><h3>'+esc(s.name)+'</h3><div class="meta">'+dt(s.starts_at)+'</div><div class="row"><span class="pill '+(s.status==='Aberto'?'ok':s.status==='Fechado'?'bad':'')+'">'+esc(s.status)+'</span><span class="pill ok">'+c+' confirmados</span>'+(late?'<span class="pill bad">'+late+' cancelamento(s) tardio(s)</span>':'')+(latest?'<span class="pill">Distribuição '+latest.version+'</span>':'')+'</div>'+list+'<div class="row" style="margin-top:10px"><button class="btn '+(s.status==='Aberto'?'danger':'primary')+'" onclick="setServiceConfirmationStatus(\''+s.id+'\',\''+(s.status==='Aberto'?'Fechado':'Aberto')+'\')">'+(s.status==='Aberto'?'Fechar confirmações':'Liberar confirmações')+'</button><button class="btn primary" onclick="runAllocation(\''+s.id+'\')">'+(latest?'Refazer distribuição':'Fazer distribuição')+'</button><button class="btn" onclick="showAllocation(\''+s.id+'\')">Ver assentos</button></div></div>'
   }).join('');
   qs('adminLeaders').innerHTML='<table class="admin-table"><thead><tr><th>Liderança</th><th>Acesso</th><th></th></tr></thead><tbody>'+(adminData.leaders||[]).map(l=>'<tr><td><strong>'+esc(l.displayName)+'</strong><br><span class="muted">'+esc(l.title)+'</span></td><td>'+(l.accessEnabled?'<span class="pill ok">Ativado</span>':'<span class="pill">Não ativado</span>')+'</td><td><button class="btn small" onclick="openLeaderEdit(\''+l.id+'\')">Editar</button></td></tr>').join('')+'</tbody></table>';
 }
