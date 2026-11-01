@@ -74,8 +74,8 @@ select,input{width:100%;border:1px solid #cad4da;border-radius:12px;padding:11px
     <div class="auto-close-box" id="autoCloseBox" style="display:none">
       <div class="auto-close-head">
         <div>
-          <div class="auto-close-title">Fechamento automático de reservas</div>
-          <div class="auto-close-sub">Fecha as reservas 1 hora antes de cada culto.</div>
+          <div class="auto-close-title">Fechamento automático de confirmações</div>
+          <div class="auto-close-sub">Fecha as confirmações 1 hora antes de cada culto.</div>
         </div>
         <div class="admin-actions"><label class="switch-row"><input type="checkbox" id="autoCloseToggle" onchange="setAutoClose(this.checked)"><span id="autoCloseState" class="auto-close-state">Carregando...</span></label><button class="btn mini" onclick="runMaintenanceNow()">Executar agora</button></div>
       </div>
@@ -345,7 +345,7 @@ function serviceDayLabel(c){
   return names[new Date(y,mo-1,d,12,0,0).getDay()]||'';
 }
 function renderStatus(c,can){var e=document.getElementById('status');if(!c){e.innerHTML='';return}var day=serviceDayLabel(c);e.innerHTML='<span class="chip">'+(day?day+' • ':'')+c.date+' • '+c.time+'</span><span class="chip '+(can?'open':'closed')+'">'+(can?'Reservas abertas':'Reservas encerradas')+'</span>';renderAdminModeBar()}
-function clearMap(){var svg=document.getElementById('seatMap'),empty=document.getElementById('mapEmpty');if(svg){svg.innerHTML='';svg.style.display='none'}if(empty){empty.style.display='block';empty.textContent=backstageToken?'Selecione ou crie um culto para visualizar o mapa.':'Ainda não há culto com reservas abertas.'}document.getElementById('reservations').innerHTML='<div class="empty">Nenhum culto disponível.</div>'}
+function clearMap(){var svg=document.getElementById('seatMap'),empty=document.getElementById('mapEmpty');if(svg){svg.innerHTML='';svg.style.display='none'}if(empty){empty.style.display='block';empty.textContent=backstageToken?'Selecione ou crie um culto para visualizar o mapa.':'Ainda não há culto com confirmações abertas.'}document.getElementById('reservations').innerHTML='<div class="empty">Nenhum culto disponível.</div>'}
 function seatById(id){return seats.find(function(x){return String(x.id)===String(id)})}
 function renderMap(can){
   mapCanReserve=!!can;
@@ -354,7 +354,7 @@ function renderMap(can){
   if(!currentService||!seats.length){
     svg.style.display='none';
     empty.style.display='block';
-    empty.textContent=backstageToken?'Selecione ou crie um culto para visualizar o mapa.':'Ainda não há culto com reservas abertas.';
+    empty.textContent=backstageToken?'Selecione ou crie um culto para visualizar o mapa.':'Ainda não há culto com confirmações abertas.';
     return;
   }
   svg.style.display='block';
@@ -771,7 +771,7 @@ function renderAdminServices(list){
   box.className='admin-list';
   box.innerHTML=list.map(function(c){
     var next=c.status==='Aberto'?'Fechado':'Aberto';
-    var label=c.status==='Aberto'?'Fechar reservas':'Abrir reservas';
+    var label=c.status==='Aberto'?'Fechar confirmações':'Abrir confirmações';
     var admin=backstageUserInfo&&backstageUserInfo.profile==='Administrador';
     return '<div class="admin-card"><div><h3>'+escapeHtml(c.name)+'</h3><p>'+escapeHtml(c.date+' • '+c.time+' • '+c.type+' • '+c.status)+'</p></div>'+
       '<div class="admin-actions">'+
