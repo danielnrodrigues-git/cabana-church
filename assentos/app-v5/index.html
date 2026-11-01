@@ -351,7 +351,7 @@ async function smartLeaderLogin(){
   const id=qs('leaderSelect').value;
   const leader=(bootstrap.leaders||[]).find(x=>x.id===id);
   if(!leader)return;
-  if(leader.hasPasskey){
+  if(leader.hasPasskey&&hasDevicePasskey('Leader',id)){
     const ok=await biometricLogin('Leader',true);
     if(ok)return;
     qs('leaderRetryBioBtn').classList.remove('hidden');
@@ -372,7 +372,7 @@ async function loadLeader(){
   leaderHome=r;qs('publicView').classList.add('hidden');qs('adminView').classList.add('hidden');qs('leaderView').classList.remove('hidden');qs('logoutBtn').classList.remove('hidden');
   qs('welcomeLeader').textContent='Olá, '+r.leader.displayName;
   qs('leaderSubtitle').textContent=r.spouse?'Cônjuge vinculado: '+r.spouse.displayName:'Seu perfil está pronto para confirmar presença.';
-  qs('enableLeaderPasskeyBtn').classList.remove('hidden');
+  qs('enableLeaderPasskeyBtn').classList.toggle('hidden',hasDevicePasskey('Leader',r.leader.id));
   renderSpouseCard();
   renderLeaderServices();
 }
@@ -471,7 +471,7 @@ async function smartBackstageLogin(){
   const id=qs('backstageUser').value;
   const user=(bootstrap.backstageUsers||[]).find(x=>x.id===id);
   if(!user)return;
-  if(user.hasPasskey){
+  if(user.hasPasskey&&hasDevicePasskey('Backstage',id)){
     const ok=await biometricLogin('Backstage',true);
     if(ok)return;
     qs('backstageRetryBioBtn').classList.remove('hidden');
@@ -488,7 +488,7 @@ function openBackstageLogin(){updateBackstageLoginState();openModal('backstageMo
 async function loginBackstage(){loading(true);try{const r=await api('loginBackstage',[{userId:qs('backstageUser').value,pin:qs('backstagePin').value}]);if(!r.ok)return msg('backstageMsg',r.message,true);backstageToken=r.token;localStorage.setItem('v6BackstageToken',backstageToken);closeModal('backstageModal');await loadAdmin()}catch(e){msg('backstageMsg',e.message,true)}finally{loading(false)}}
 async function loadAdmin(){
   const r=await api('getAdminDashboard',[backstageToken]);if(!r.ok){backstageToken='';localStorage.removeItem('v6BackstageToken');return}
-  adminData=r;qs('publicView').classList.add('hidden');qs('leaderView').classList.add('hidden');qs('adminView').classList.remove('hidden');qs('logoutBtn').classList.remove('hidden');qs('adminWho').textContent='Logado como '+r.user.name+' · '+r.user.profile;qs('enableBackstagePasskeyBtn').classList.remove('hidden');renderAdmin();
+  adminData=r;qs('publicView').classList.add('hidden');qs('leaderView').classList.add('hidden');qs('adminView').classList.remove('hidden');qs('logoutBtn').classList.remove('hidden');qs('adminWho').textContent='Logado como '+r.user.name+' · '+r.user.profile;qs('enableBackstagePasskeyBtn').classList.toggle('hidden',hasDevicePasskey('Backstage',r.user.id));renderAdmin();
 }
 function showAdminTab(name,el){['services','leaders','couples'].forEach(x=>qs('admin-'+x).classList.toggle('hidden',x!==name));document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));el.classList.add('active')}
 function renderAdmin(){
@@ -631,6 +631,15 @@ function authenticationCredentialJSON(cred){
   };
 }
 function webAuthnAvailable(){return !!(window.PublicKeyCredential&&navigator.credentials&&navigator.credentials.create&&navigator.credentials.get)}
+function devicePasskeyKey(ownerType,ownerId){
+  return 'v6DevicePasskey:'+location.hostname+':'+ownerType+':'+String(ownerId||'');
+}
+function hasDevicePasskey(ownerType,ownerId){
+  return !!(ownerId&&localStorage.getItem(devicePasskeyKey(ownerType,ownerId))==='1');
+}
+function markDevicePasskey(ownerType,ownerId){
+  if(ownerId)localStorage.setItem(devicePasskeyKey(ownerType,ownerId),'1');
+}
 async function enablePasskey(ownerType){
   if(!webAuthnAvailable())return alert('Este navegador ou dispositivo não oferece suporte a biometria/passkeys.');
   const token=ownerType==='Leader'?leaderToken:backstageToken;
@@ -640,6 +649,9 @@ async function enablePasskey(ownerType){
     if(!cred)throw new Error('Cadastro biométrico cancelado.');
     const response=registrationCredentialJSON(cred);
     const y=await api('passkeyRegisterVerify',[{ownerType,token,response,deviceLabel:navigator.platform||'Dispositivo'}]);
+    if(!y.ok)return alert(y.message||'Não foi possível ativar a biometria.');
+    const ownerId=ownerType==='Leader'?(leaderHome?.leader?.id||qs('leaderSelect').value):(adminData?.user?.id||qs('backstageUser').value);
+    markDevicePasskey(ownerType,ownerId);
     alert(y.message||'Acesso biométrico ativado.');
     if(ownerType==='Leader')await loadLeader();else await loadAdmin();
   }catch(e){alert('Não foi possível ativar a biometria: '+(e.message||e))}
@@ -653,6 +665,7 @@ async function biometricLogin(ownerType,silent=false){
     if(!cred)throw new Error('Autenticação biométrica cancelada.');
     const response=authenticationCredentialJSON(cred);
     const y=await api('passkeyAuthVerify',[{ownerType,ownerId,response}]);if(!y.ok){if(!silent)alert(y.message);return false}
+    if(cred.authenticatorAttachment==='platform')markDevicePasskey(ownerType,ownerId);
     if(ownerType==='Leader'){leaderToken=y.token;localStorage.setItem('v6LeaderToken',leaderToken);rememberLeader(qs('leaderSelect').value);await loadLeader()}else{backstageToken=y.token;localStorage.setItem('v6BackstageToken',backstageToken);closeModal('backstageModal');await loadAdmin()}
     return true;
   }catch(e){if(!silent)alert('Não foi possível usar a biometria: '+(e.message||e));return false}
