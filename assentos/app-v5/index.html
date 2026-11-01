@@ -45,7 +45,7 @@ select,input{width:100%;border:1px solid #cad6db;border-radius:12px;padding:11px
     <div class="card">
       <div class="section-title">Acesso da liderança</div>
       <div id="leaderSearchWrap" class="field autocomplete"><label>Busque seu nome</label><input id="leaderSearch" autocomplete="off" placeholder="Digite seu nome..." oninput="filterLeaderAutocomplete()" onfocus="filterLeaderAutocomplete()"><input type="hidden" id="leaderSelect"><div id="leaderAutocomplete" class="autocomplete-list"></div></div>
-      <div id="rememberedLeaderWrap" class="identity-row hidden"><div><div class="muted">Este dispositivo</div><div id="rememberedLeaderName" class="identity-name"></div></div><button class="btn small" onclick="changeRememberedLeader()">Trocar usuário</button></div>
+      <div id="rememberedLeaderWrap" class="identity-row hidden"><div><div class="muted">Este dispositivo</div><div id="rememberedLeaderName" class="identity-name"></div></div></div>
       <div id="leaderPinWrap" class="field hidden" style="margin-top:10px"><label>PIN de 6 dígitos</label><input id="leaderPin" inputmode="numeric" maxlength="6" type="password" placeholder="••••••"></div>
       <div class="row" style="margin-top:12px">
         <button id="leaderLoginBtn" class="btn primary hidden" onclick="smartLeaderLogin()">Entrar</button>
@@ -230,15 +230,6 @@ function restoreRememberedLeader(){
   qs('rememberedLeaderName').textContent=leader.displayName;
   qs('leaderSearchWrap').classList.add('hidden');
   qs('rememberedLeaderWrap').classList.remove('hidden');
-}
-function changeRememberedLeader(){
-  localStorage.removeItem('v6RememberedLeaderId');
-  qs('leaderSelect').value='';
-  qs('leaderSearch').value='';
-  qs('leaderSearchWrap').classList.remove('hidden');
-  qs('rememberedLeaderWrap').classList.add('hidden');
-  updateLeaderLoginState();
-  setTimeout(()=>qs('leaderSearch').focus(),50);
 }
 function updateLeaderLoginState(){
   const id=qs('leaderSelect').value;
