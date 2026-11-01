@@ -185,6 +185,7 @@ main{width:min(480px,100%);padding:14px 10px 36px}
     <div class="card">
       <div class="row">
         <button id="enableBackstagePasskeyBtn" class="btn btn-backstage" onclick="enablePasskey('Backstage')">Ativar biometria neste dispositivo</button>
+        <button id="enableBackstagePushBtn" class="btn btn-backstage" onclick="enablePushNotifications('Backstage')">Ativar notificações neste dispositivo</button>
         <button class="btn btn-backstage" onclick="openLegacyAdmin()">Painel de administração</button>
         <button class="btn btn-backstage" onclick="openCodeModal()">Código de primeiro acesso</button>
       </div>
@@ -306,24 +307,30 @@ async function registerPushWorker(){
   if(!pushSupported())return null;
   try{return await navigator.serviceWorker.register('/sw.js',{scope:'/'});}catch(e){console.warn('Service worker',e);return null}
 }
-async function syncPushUi(){
-  const btn=qs('enablePushBtn');if(!btn)return;
-  if(!pushSupported()||!leaderHome){btn.classList.add('hidden');return}
+async function syncPushUi(ownerType='Leader'){
+  const isBackstage=ownerType==='Backstage';
+  const btn=qs(isBackstage?'enableBackstagePushBtn':'enablePushBtn');if(!btn)return;
+  const ready=isBackstage?!!adminData:!!leaderHome;
+  const token=isBackstage?backstageToken:leaderToken;
+  if(!pushSupported()||!ready){btn.classList.add('hidden');return}
   try{
     await registerPushWorker();
     const reg=await navigator.serviceWorker.ready;
     const sub=await reg.pushManager.getSubscription();
     const active=!!(sub&&Notification.permission==='granted');
     btn.classList.toggle('hidden',active);
-    if(active&&leaderToken){
+    if(active&&token){
       const j=sub.toJSON();
-      await api('savePushSubscription',[{token:leaderToken,subscription:j,deviceLabel:navigator.platform||'Dispositivo',userAgent:navigator.userAgent}]);
+      await api('savePushSubscription',[{ownerType,token,subscription:j,deviceLabel:navigator.platform||'Dispositivo',userAgent:navigator.userAgent}]);
     }
   }catch(e){btn.classList.remove('hidden')}
 }
-async function enablePushNotifications(){
+async function enablePushNotifications(ownerType='Leader'){
+  const isBackstage=ownerType==='Backstage';
+  const token=isBackstage?backstageToken:leaderToken;
+  const btn=qs(isBackstage?'enableBackstagePushBtn':'enablePushBtn');
   if(!pushSupported())return alert('Este navegador ou dispositivo não oferece suporte a notificações push.');
-  if(!leaderToken)return alert('Entre no seu perfil antes de ativar as notificações.');
+  if(!token)return alert('Entre no seu perfil antes de ativar as notificações.');
   try{
     const permission=await Notification.requestPermission();
     if(permission!=='granted')return alert('As notificações não foram autorizadas neste dispositivo.');
@@ -334,9 +341,9 @@ async function enablePushNotifications(){
       if(!bootstrap.pushPublicKey)throw new Error('Chave pública de notificações indisponível.');
       sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:pushKeyToBytes(bootstrap.pushPublicKey)});
     }
-    const r=await api('savePushSubscription',[{token:leaderToken,subscription:sub.toJSON(),deviceLabel:navigator.platform||'Dispositivo',userAgent:navigator.userAgent}]);
+    const r=await api('savePushSubscription',[{ownerType,token,subscription:sub.toJSON(),deviceLabel:navigator.platform||'Dispositivo',userAgent:navigator.userAgent}]);
     if(!r.ok)throw new Error(r.message||'Não foi possível salvar a assinatura.');
-    qs('enablePushBtn')?.classList.add('hidden');
+    btn?.classList.add('hidden');
     alert('Notificações ativadas neste dispositivo.');
   }catch(e){
     const standalone=window.matchMedia?.('(display-mode: standalone)')?.matches||navigator.standalone===true;
@@ -432,7 +439,7 @@ async function loadLeader(){
   qs('welcomeLeader').textContent='Olá, '+r.leader.displayName;
   qs('leaderSubtitle').textContent=r.spouse?'Cônjuge vinculado: '+r.spouse.displayName:'Seu perfil está pronto para confirmar presença.';
   qs('enableLeaderPasskeyBtn').classList.toggle('hidden',hasDevicePasskey('Leader',r.leader.id));
-  syncPushUi();
+  syncPushUi('Leader');
   renderSpouseCard();
   renderLeaderServices();
 }
@@ -548,7 +555,7 @@ function openBackstageLogin(){updateBackstageLoginState();openModal('backstageMo
 async function loginBackstage(){loading(true);try{const r=await api('loginBackstage',[{userId:qs('backstageUser').value,pin:qs('backstagePin').value}]);if(!r.ok)return msg('backstageMsg',r.message,true);backstageToken=r.token;localStorage.setItem('v6BackstageToken',backstageToken);closeModal('backstageModal');await loadAdmin()}catch(e){msg('backstageMsg',e.message,true)}finally{loading(false)}}
 async function loadAdmin(){
   const r=await api('getAdminDashboard',[backstageToken]);if(!r.ok){backstageToken='';localStorage.removeItem('v6BackstageToken');return}
-  adminData=r;qs('publicView').classList.add('hidden');qs('leaderView').classList.add('hidden');qs('adminView').classList.remove('hidden');qs('logoutBtn').classList.remove('hidden');qs('adminWho').textContent='Logado como '+r.user.name+' · '+r.user.profile;qs('enableBackstagePasskeyBtn').classList.toggle('hidden',hasDevicePasskey('Backstage',r.user.id));renderAdmin();
+  adminData=r;qs('publicView').classList.add('hidden');qs('leaderView').classList.add('hidden');qs('adminView').classList.remove('hidden');qs('logoutBtn').classList.remove('hidden');qs('adminWho').textContent='Logado como '+r.user.name+' · '+r.user.profile;qs('enableBackstagePasskeyBtn').classList.toggle('hidden',hasDevicePasskey('Backstage',r.user.id));syncPushUi('Backstage');renderAdmin();
 }
 function showAdminTab(name,el){['services','leaders','couples'].forEach(x=>qs('admin-'+x).classList.toggle('hidden',x!==name));document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));el.classList.add('active')}
 function renderAdmin(){
