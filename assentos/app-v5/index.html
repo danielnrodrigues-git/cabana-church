@@ -496,7 +496,13 @@ function showAdminTab(name,el){['services','leaders','couples'].forEach(x=>qs('a
 function renderAdmin(){
   const leaderByUuid={};
   (adminData.leaders||[]).forEach(l=>leaderByUuid[l.uuid]=l);
-  qs('adminServices').innerHTML=(adminData.services||[]).map(s=>{
+  const visibleServices=(adminData.services||[]).filter(s=>{
+    const start=new Date(s.starts_at).getTime();
+    const expired=Date.now()>=start+3*60*60*1000;
+    const finished=['Finalizado','Fechado'].includes(String(s.status||''));
+    return !(finished&&expired);
+  });
+  qs('adminServices').innerHTML=visibleServices.map(s=>{
     const confirmed=(adminData.confirmations||[]).filter(x=>x.service_id===s.id&&x.status==='Confirmado');
     const c=confirmed.length;
     const late=(adminData.confirmations||[]).filter(x=>x.service_id===s.id&&x.status==='Cancelado'&&x.late_cancellation).length;
