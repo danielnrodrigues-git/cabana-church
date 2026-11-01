@@ -32,7 +32,7 @@ select,input{width:100%;border:1px solid #cad6db;border-radius:12px;padding:11px
 .brand-lockup{text-align:center;color:#fff;line-height:1}.brand-mark{display:block;width:72px;height:28px;margin:0 auto 4px}.brand-name{font-size:28px;font-weight:900;letter-spacing:1px}.brand-church{font-size:12px;font-weight:900;letter-spacing:3px;margin-top:4px}
 body{background:#f4f6f8}.hero{text-align:center;padding:28px 12px 10px}.hero h1{font-size:30px;color:#172033}.hero p{color:#697586}
 .card{border-radius:18px;border:1px solid #dbe3e7;box-shadow:0 10px 26px rgba(23,32,51,.06);background:#fff}
-.section-title{font-size:18px;font-weight:900;color:#172033}
+.section-title{font-size:18px;font-weight:900;color:#172033}.admin-headline{max-width:1180px;margin:12px auto 0;padding:0 2px}.admin-headline p{margin:0;color:#697586;font-weight:700}
 .btn{border-radius:12px;font-weight:800}.btn.primary{background:#1eaeb9;border-color:#1eaeb9}.btn.primary:hover{background:#168f99;border-color:#168f99}
 .tabs{background:#fff;border:1px solid #dbe3e7;border-radius:14px;padding:6px;gap:6px;box-shadow:0 6px 18px rgba(23,32,51,.05)}
 .tab{border-radius:10px}.tab.active{background:#172033;color:#fff}
@@ -61,7 +61,7 @@ body{background:#f4f6f8}.hero{text-align:center;padding:28px 12px 10px}.hero h1{
 </header>
 <main>
   <section id="publicView">
-    <div class="hero"><h1>Confirme sua presença</h1><p>Seu assento será definido automaticamente, respeitando as regras ministeriais, casais e o rodízio de posições.</p></div>
+    <div class="hero"><h1>Confirme sua presença</h1><p>Confirme sua presença no altar para servir com excelência.</p></div>
     <div class="card">
       <div class="section-title">Acesso da liderança</div>
       <div id="leaderSearchWrap" class="field autocomplete"><label>Busque seu nome</label><input id="leaderSearch" autocomplete="off" placeholder="Digite seu nome..." oninput="filterLeaderAutocomplete()" onfocus="filterLeaderAutocomplete()"><input type="hidden" id="leaderSelect"><div id="leaderAutocomplete" class="autocomplete-list"></div></div>
@@ -78,7 +78,7 @@ body{background:#f4f6f8}.hero{text-align:center;padding:28px 12px 10px}.hero h1{
   </section>
 
   <section id="leaderView" class="hidden">
-    <div class="hero"><h1 id="welcomeLeader">Olá!</h1><p id="leaderSubtitle"></p></div>
+    <div class="hero"><h1 id="welcomeLeader">Olá!</h1><p>Confirme sua presença no altar para servir com excelência.</p><p id="leaderSubtitle" class="muted"></p></div>
     <div class="card">
       <div class="row" style="justify-content:space-between">
         <div><div class="section-title">Seu acesso</div><div class="muted">PIN pessoal + acesso rápido no dispositivo</div></div>
@@ -96,7 +96,7 @@ body{background:#f4f6f8}.hero{text-align:center;padding:28px 12px 10px}.hero h1{
   </section>
 
   <section id="adminView" class="hidden">
-    <div class="hero"><h1>Painel Backstage</h1><p id="adminWho"></p></div>
+    <div class="admin-headline"><p id="adminWho"></p></div>
     <div class="card">
       <div class="row">
         <button id="enableBackstagePasskeyBtn" class="btn btn-backstage" onclick="enablePasskey('Backstage')">Ativar biometria</button>
