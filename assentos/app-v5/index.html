@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Meu Assento | Cabana Church</title>
 <meta name="theme-color" content="#52ABB8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Meu Assento">
+<link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" type="image/svg+xml" href="./favicon.svg">
 <style>
 :root{--teal:#52ABB8;--teal2:#178e99;--ink:#172033;--muted:#68737d;--line:#dde7ea;--bg:#f4f7f8;--ok:#197154;--warn:#9c6300;--bad:#a43e3e}
@@ -160,7 +164,10 @@ main{width:min(480px,100%);padding:14px 10px 36px}
     <div class="card">
       <div class="row" style="justify-content:space-between">
         <div><div class="section-title">Seu acesso</div><div class="muted">PIN pessoal + acesso rápido no dispositivo</div></div>
-        <button id="enableLeaderPasskeyBtn" class="btn" onclick="enablePasskey('Leader')">Ativar biometria neste dispositivo</button>
+        <div class="stack" style="min-width:180px">
+          <button id="enableLeaderPasskeyBtn" class="btn" onclick="enablePasskey('Leader')">Ativar biometria neste dispositivo</button>
+          <button id="enablePushBtn" class="btn" onclick="enablePushNotifications()">Ativar notificações neste dispositivo</button>
+        </div>
       </div>
     </div>
     <div class="card" id="spouseCard">
@@ -288,7 +295,57 @@ async function api(method,args=[]){const r=await fetch(API,{method:'POST',header
 function dt(s){try{return new Date(s).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'})}catch{return s}}
 function serviceName(s){return (s.name||'Culto')+' · '+dt(s.starts_at)}
 function fillSelect(id,rows,valueKey='id',labelKey='displayName',blank='Selecione...'){qs(id).innerHTML='<option value="">'+blank+'</option>'+rows.map(x=>'<option value="'+esc(x[valueKey])+'">'+esc(x[labelKey])+'</option>').join('')}
+function pushSupported(){return !!('serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window)}
+function pushKeyToBytes(s){
+  const pad='='.repeat((4-s.length%4)%4),base=(s+pad).replace(/-/g,'+').replace(/_/g,'/');
+  const raw=atob(base),out=new Uint8Array(raw.length);
+  for(let i=0;i<raw.length;i++)out[i]=raw.charCodeAt(i);
+  return out;
+}
+async function registerPushWorker(){
+  if(!pushSupported())return null;
+  try{return await navigator.serviceWorker.register('/sw.js',{scope:'/'});}catch(e){console.warn('Service worker',e);return null}
+}
+async function syncPushUi(){
+  const btn=qs('enablePushBtn');if(!btn)return;
+  if(!pushSupported()||!leaderHome){btn.classList.add('hidden');return}
+  try{
+    await registerPushWorker();
+    const reg=await navigator.serviceWorker.ready;
+    const sub=await reg.pushManager.getSubscription();
+    const active=!!(sub&&Notification.permission==='granted');
+    btn.classList.toggle('hidden',active);
+    if(active&&leaderToken){
+      const j=sub.toJSON();
+      await api('savePushSubscription',[{token:leaderToken,subscription:j,deviceLabel:navigator.platform||'Dispositivo',userAgent:navigator.userAgent}]);
+    }
+  }catch(e){btn.classList.remove('hidden')}
+}
+async function enablePushNotifications(){
+  if(!pushSupported())return alert('Este navegador ou dispositivo não oferece suporte a notificações push.');
+  if(!leaderToken)return alert('Entre no seu perfil antes de ativar as notificações.');
+  try{
+    const permission=await Notification.requestPermission();
+    if(permission!=='granted')return alert('As notificações não foram autorizadas neste dispositivo.');
+    await registerPushWorker();
+    const reg=await navigator.serviceWorker.ready;
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub){
+      if(!bootstrap.pushPublicKey)throw new Error('Chave pública de notificações indisponível.');
+      sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:pushKeyToBytes(bootstrap.pushPublicKey)});
+    }
+    const r=await api('savePushSubscription',[{token:leaderToken,subscription:sub.toJSON(),deviceLabel:navigator.platform||'Dispositivo',userAgent:navigator.userAgent}]);
+    if(!r.ok)throw new Error(r.message||'Não foi possível salvar a assinatura.');
+    qs('enablePushBtn')?.classList.add('hidden');
+    alert('Notificações ativadas neste dispositivo.');
+  }catch(e){
+    const standalone=window.matchMedia?.('(display-mode: standalone)')?.matches||navigator.standalone===true;
+    const extra=!standalone&&/iPhone|iPad|iPod/i.test(navigator.userAgent)?' No iPhone, abra o Meu Assento pelo ícone adicionado à Tela de Início.':'';
+    alert('Não foi possível ativar as notificações: '+(e.message||e)+extra);
+  }
+}
 async function init(){
+  registerPushWorker();
   loading(true);
   try{
     const b=await api('getV6Bootstrap');bootstrap=b;
@@ -375,6 +432,7 @@ async function loadLeader(){
   qs('welcomeLeader').textContent='Olá, '+r.leader.displayName;
   qs('leaderSubtitle').textContent=r.spouse?'Cônjuge vinculado: '+r.spouse.displayName:'Seu perfil está pronto para confirmar presença.';
   qs('enableLeaderPasskeyBtn').classList.toggle('hidden',hasDevicePasskey('Leader',r.leader.id));
+  syncPushUi();
   renderSpouseCard();
   renderLeaderServices();
 }
