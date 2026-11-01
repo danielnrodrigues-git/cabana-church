@@ -151,8 +151,7 @@ select,input{width:100%;border:1px solid #cad6db;border-radius:12px;padding:11px
 <div class="modal" id="cancelModal"><div class="box">
   <button class="close" onclick="closeModal('cancelModal')">×</button>
   <h2>Cancelar presença</h2><p class="muted" id="cancelText"></p>
-  <div id="cancelSpouseWrap" class="hidden"><label><input type="checkbox" id="cancelSpouse" style="width:auto"> Cancelar também a presença do cônjuge</label></div>
-  <button class="btn danger" style="margin-top:12px;width:100%" onclick="confirmCancel()">Confirmar cancelamento</button>
+  <div id="cancelOptions" class="stack" style="margin-top:12px"></div>
 </div></div>
 
 <div class="modal" id="codeModal"><div class="box">
@@ -275,8 +274,28 @@ function renderLeaderServices(){
   }).join('')||'<div class="muted">Nenhum culto disponível.</div>'
 }
 async function confirmPresence(serviceId,includeSpouse){loading(true);try{const r=await api('confirmPresence',[{token:leaderToken,serviceId,includeSpouse}]);if(!r.ok)return alert(r.message);await loadLeader()}catch(e){alert(e.message)}finally{loading(false)}}
-function openCancel(id){cancelServiceId=id;qs('cancelSpouseWrap').classList.toggle('hidden',!leaderHome.spouse);qs('cancelSpouse').checked=false;qs('cancelText').textContent='Você pode cancelar pelo aplicativo até 30 minutos antes do culto. Entre 1h e 30min antes, o Backstage será alertado.';openModal('cancelModal')}
-async function confirmCancel(){closeModal('cancelModal');loading(true);try{const r=await api('cancelPresence',[{token:leaderToken,serviceId:cancelServiceId,cancelSpouse:qs('cancelSpouse').checked}]);if(!r.ok){if(r.code==='CONTACT_BACKSTAGE')return contactBackstage();return alert(r.message)}if(r.late)alert('Cancelamento tardio registrado. O Backstage foi sinalizado para reorganização.');await loadLeader()}catch(e){alert(e.message)}finally{loading(false)}}
+function openCancel(id){
+  cancelServiceId=id;
+  const s=(leaderHome.services||[]).find(x=>x.id===id);
+  const spouseConfirmed=!!(s&&s.spousePresence&&s.spousePresence.status==='Confirmado');
+  qs('cancelText').textContent='Você pode cancelar pelo aplicativo até 30 minutos antes do culto. Entre 1h e 30min antes, o Backstage será alertado.';
+  let html='<button class="btn danger" style="width:100%" onclick="confirmCancel(\'self\')">Cancelar somente minha presença</button>';
+  if(leaderHome.spouse&&spouseConfirmed){
+    html+='<button class="btn" style="width:100%" onclick="confirmCancel(\'spouse\')">Cancelar somente a presença de '+esc(leaderHome.spouse.displayName)+'</button>';
+    html+='<button class="btn danger" style="width:100%" onclick="confirmCancel(\'couple\')">Cancelar a presença do casal</button>';
+  }
+  qs('cancelOptions').innerHTML=html;
+  openModal('cancelModal');
+}
+async function confirmCancel(scope){
+  closeModal('cancelModal');loading(true);
+  try{
+    const r=await api('cancelPresence',[{token:leaderToken,serviceId:cancelServiceId,scope}]);
+    if(!r.ok){if(r.code==='CONTACT_BACKSTAGE')return contactBackstage();return alert(r.message)}
+    if(r.late)alert('Cancelamento tardio registrado. O Backstage foi sinalizado para reorganização.');
+    await loadLeader();
+  }catch(e){alert(e.message)}finally{loading(false)}
+}
 function contactBackstage(){const n=bootstrap.backstageWhatsApp;if(!n)return alert('Canal do Backstage não configurado.');window.open('https://wa.me/55'+String(n).replace(/\D/g,''),'_blank')}
 function updateBackstageLoginState(){
   const id=qs('backstageUser').value;
