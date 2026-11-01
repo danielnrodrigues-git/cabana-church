@@ -636,11 +636,17 @@ function webAuthnAvailable(){return !!(window.PublicKeyCredential&&navigator.cre
 function devicePasskeyKey(ownerType,ownerId){
   return 'v6DevicePasskey:'+location.hostname+':'+ownerType+':'+String(ownerId||'');
 }
-function hasDevicePasskey(ownerType,ownerId){
-  return !!(ownerId&&localStorage.getItem(devicePasskeyKey(ownerType,ownerId))==='1');
-}
 function markDevicePasskey(ownerType,ownerId){
-  if(ownerId)localStorage.setItem(devicePasskeyKey(ownerType,ownerId),'1');
+  if(!ownerId)return;
+  try{
+    localStorage.setItem(devicePasskeyKey(ownerType,ownerId),'1');
+    sessionStorage.setItem(devicePasskeyKey(ownerType,ownerId),'1');
+  }catch(e){}
+}
+function hasDevicePasskey(ownerType,ownerId){
+  if(!ownerId)return false;
+  const k=devicePasskeyKey(ownerType,ownerId);
+  try{return localStorage.getItem(k)==='1'||sessionStorage.getItem(k)==='1'}catch(e){return false}
 }
 async function enablePasskey(ownerType){
   if(!webAuthnAvailable())return alert('Este navegador ou dispositivo não oferece suporte a biometria/passkeys.');
@@ -654,6 +660,8 @@ async function enablePasskey(ownerType){
     if(!y.ok)return alert(y.message||'Não foi possível ativar a biometria.');
     const ownerId=ownerType==='Leader'?(leaderHome?.leader?.id||qs('leaderSelect').value):(adminData?.user?.id||qs('backstageUser').value);
     markDevicePasskey(ownerType,ownerId);
+    const btn=ownerType==='Leader'?qs('enableLeaderPasskeyBtn'):qs('enableBackstagePasskeyBtn');
+    if(btn)btn.classList.add('hidden');
     alert(y.message||'Acesso biométrico ativado.');
     if(ownerType==='Leader')await loadLeader();else await loadAdmin();
   }catch(e){alert('Não foi possível ativar a biometria: '+(e.message||e))}
