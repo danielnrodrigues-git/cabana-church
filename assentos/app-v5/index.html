@@ -34,10 +34,18 @@ select,input{width:100%;border:1px solid #cad6db;border-radius:12px;padding:11px
 .autocomplete{position:relative}.autocomplete-list{display:none;position:absolute;left:0;right:0;top:100%;z-index:60;background:#fff;border:1px solid #cad6db;border-radius:12px;box-shadow:0 10px 24px rgba(23,32,51,.12);max-height:260px;overflow:auto;margin-top:4px}.autocomplete-list.show{display:block}.autocomplete-item{padding:10px 12px;cursor:pointer;border-bottom:1px solid #edf1f3}.autocomplete-item:last-child{border-bottom:0}.autocomplete-item:hover{background:#f4f7f8}.identity-row{display:flex;align-items:center;justify-content:space-between;gap:10px}.identity-name{font-weight:900;font-size:16px}
 .v5-header{min-height:110px;background:#58aeba;display:flex;align-items:center;justify-content:center;position:relative;padding:12px 18px;border-bottom:0}
 .header-left-actions{
-  position:absolute;left:10px;top:50%;transform:translateY(-50%);
-  display:flex;flex-direction:column;gap:8px;width:48px;z-index:3
+  position:fixed;left:10px;top:calc(env(safe-area-inset-top,0px) + 12px);
+  display:flex;flex-direction:column;gap:8px;width:44px;z-index:9999
 }
-.header-icon-btn{width:48px;min-width:48px;padding:10px 0;font-size:22px;font-weight:900}
+.header-icon-btn{
+  width:44px;min-width:44px;height:44px;padding:0;
+  font-size:22px;font-weight:900;
+  background:rgba(11,19,36,.28)!important;
+  color:#fff!important;
+  border:1px solid rgba(255,255,255,.34)!important;
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  box-shadow:0 4px 14px rgba(0,0,0,.10)
+}
 .v5-header .actions{position:absolute;right:18px;top:50%;transform:translateY(-50%);display:flex;gap:8px}
 .brand-lockup{text-align:center;color:#fff;line-height:1}.brand-mark{display:block;width:72px;height:28px;margin:0 auto 4px}.brand-name{font-size:28px;font-weight:900;letter-spacing:1px}.brand-church{font-size:12px;font-weight:900;letter-spacing:3px;margin-top:4px}
 body{background:#f4f6f8}.hero{text-align:center;padding:28px 12px 10px}.hero h1{font-size:30px;color:#172033}.hero p{color:#697586}
@@ -136,7 +144,7 @@ main{width:min(480px,100%);padding:14px 10px 36px}
 <header class="v5-header">
   <div class="header-left-actions">
     <button class="header-btn header-icon-btn" id="homeBtn" onclick="goHome()" aria-label="Início" title="Início">⌂</button>
-    <button class="header-btn header-icon-btn" id="refreshBtn" onclick="refreshCurrentView()" aria-label="Atualizar" title="Atualizar">↻</button>
+    <button class="header-btn header-icon-btn" id="backBtn" onclick="goBack()" aria-label="Voltar" title="Voltar">‹</button>
   </div>
   <div class="brand-lockup" aria-label="Cabana Church">
     <svg class="brand-mark" viewBox="0 0 120 42" aria-hidden="true">
@@ -318,6 +326,10 @@ function goHome(){
   qs('leaderView')?.classList.add('hidden');
   qs('publicView')?.classList.remove('hidden');
   window.scrollTo({top:0,behavior:'smooth'});
+}
+function goBack(){
+  if(history.length>1){history.back();return}
+  goHome();
 }
 async function refreshCurrentView(){
   const btn=qs('refreshBtn');if(btn)btn.disabled=true;
