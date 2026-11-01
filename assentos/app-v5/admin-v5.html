@@ -1064,7 +1064,41 @@ function restoreBackstageSession(){
     backstageToken='';backstageUserInfo=null;localStorage.removeItem('meuAssentoV5BackstageToken');renderAdminModeBar();
   });
 }
-window.addEventListener('load',function(){refreshAll().then(restoreBackstageSession);});
+function openAdminDirectIfRequested(){
+  var params=new URLSearchParams(window.location.search);
+  if(params.get('admin')!=='1')return Promise.resolve();
+  if(!backstageToken)return Promise.resolve();
+  return rpc('v5_admin_dashboard',{p_token:backstageToken}).then(function(r){
+    if(!r||!r.ok)throw new Error((r&&r.message)||'Sessão inválida.');
+    backstageUserInfo=r.user;adminData=r;
+    renderBackstageMainServices();
+    renderAdminModeBar();
+    document.getElementById('backstageLogin').style.display='none';
+    document.getElementById('backstageSetup').style.display='none';
+    document.getElementById('backstagePanel').style.display='block';
+    document.getElementById('backstageWho').textContent=r.user.name+' • '+r.user.profile;
+    document.querySelectorAll('.admin-only').forEach(function(x){x.style.display=r.user.profile==='Administrador'?'inline-block':'none'});
+    renderAdminServices(r.services||[]);
+    renderPastServices(r.pastServices||[]);
+    renderAdminLeaders(r.leaders||[]);
+    renderAdminUsers(r.users||[]);
+    renderBackstageWhatsAppAdmin();
+    renderAudit(r.audit||[]);
+    initAttendanceReportsAdmin(r.attendanceReports||{});
+    fillAdminServiceSelectors(r.services||[]);
+    loadAutoCloseStatus();
+    show('backstageModal');
+  }).catch(function(e){
+    backstageToken='';backstageUserInfo=null;
+    localStorage.removeItem('meuAssentoV5BackstageToken');
+    alert(e.message||'Não foi possível abrir a administração.');
+  });
+}
+window.addEventListener('load',function(){
+  refreshAll().then(function(){
+    return restoreBackstageSession();
+  }).then(openAdminDirectIfRequested);
+});
 </script>
 </body>
 </html>
