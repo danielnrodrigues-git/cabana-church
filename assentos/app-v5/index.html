@@ -148,6 +148,16 @@ select,input{width:100%;border:1px solid #cad6db;border-radius:12px;padding:11px
   <div id="leaderEditMsg" class="msg"></div>
 </div></div>
 
+<div class="modal" id="confirmPresenceModal"><div class="box">
+  <button class="close" onclick="closeModal('confirmPresenceModal')">×</button>
+  <h2>Confirmar presença</h2>
+  <p class="muted" id="confirmPresenceText"></p>
+  <div id="confirmSpouseWrap" class="hidden" style="margin-top:12px">
+    <label><input type="checkbox" id="confirmSpouseCheck" style="width:auto"> Confirmar também para o cônjuge</label>
+  </div>
+  <button class="btn primary" style="margin-top:12px;width:100%" onclick="submitPresenceConfirmation()">Confirmar presença</button>
+</div></div>
+
 <div class="modal" id="cancelModal"><div class="box">
   <button class="close" onclick="closeModal('cancelModal')">×</button>
   <h2>Cancelar presença</h2><p class="muted" id="cancelText"></p>
@@ -261,8 +271,7 @@ function renderLeaderServices(){
     const now=Date.now(),confirmClose=new Date(s.confirmCloseAt).getTime(),cancelClose=new Date(s.cancelCloseAt).getTime();
     let actions='';
     if(!confirmed&&now<confirmClose){
-      actions='<button class="btn primary" onclick="confirmPresence(\''+s.id+'\',false)">Confirmar minha presença</button>';
-      if(leaderHome.spouse)actions+=' <button class="btn" onclick="confirmPresence(\''+s.id+'\',true)">Confirmar casal</button>';
+      actions='<button class="btn primary" onclick="openPresenceConfirmation(\''+s.id+'\')">Confirmar presença</button>';
     }else if(confirmed&&now<cancelClose){
       actions='<button class="btn danger" onclick="openCancel(\''+s.id+'\')">Cancelar presença</button>';
     }else if(confirmed&&now>=cancelClose){
@@ -273,7 +282,25 @@ function renderLeaderServices(){
     return '<div class="service"><h3>'+esc(s.name)+'</h3><div class="meta">'+dt(s.starts_at)+'</div>'+state+seat+'<div class="row" style="margin-top:10px">'+actions+'</div></div>'
   }).join('')||'<div class="muted">Nenhum culto disponível.</div>'
 }
-async function confirmPresence(serviceId,includeSpouse){loading(true);try{const r=await api('confirmPresence',[{token:leaderToken,serviceId,includeSpouse}]);if(!r.ok)return alert(r.message);await loadLeader()}catch(e){alert(e.message)}finally{loading(false)}}
+let confirmServiceId='';
+function openPresenceConfirmation(serviceId){
+  confirmServiceId=serviceId;
+  const s=(leaderHome.services||[]).find(x=>x.id===serviceId);
+  qs('confirmPresenceText').textContent=s?'Confirmar presença em '+s.name+'?':'Confirmar presença neste culto?';
+  qs('confirmSpouseWrap').classList.toggle('hidden',!leaderHome.spouse);
+  qs('confirmSpouseCheck').checked=false;
+  openModal('confirmPresenceModal');
+}
+async function submitPresenceConfirmation(){
+  closeModal('confirmPresenceModal');
+  const includeSpouse=!!(leaderHome.spouse&&qs('confirmSpouseCheck').checked);
+  loading(true);
+  try{
+    const r=await api('confirmPresence',[{token:leaderToken,serviceId:confirmServiceId,includeSpouse}]);
+    if(!r.ok)return alert(r.message);
+    await loadLeader();
+  }catch(e){alert(e.message)}finally{loading(false)}
+}
 function openCancel(id){
   cancelServiceId=id;
   const s=(leaderHome.services||[]).find(x=>x.id===id);
