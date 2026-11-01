@@ -1,0 +1,19 @@
+{
+  "id": "/",
+  "name": "Meu Assento | Cabana Church",
+  "short_name": "Meu Assento",
+  "description": "Confirmação de presença e organização do altar da Cabana Church.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f4f7f8",
+  "theme_color": "#52ABB8",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
