@@ -426,19 +426,15 @@ async function resetLeaderFromEdit(){
   }catch(e){msg('leaderEditMsg',e.message,true)}finally{loading(false)}
 }
 async function saveCouple(){loading(true);try{const r=await api('adminLinkCouple',[{token:backstageToken,leader1Id:qs('couple1').value,leader2Id:qs('couple2').value}]);msg('coupleMsg',r.message,!r.ok);if(r.ok)await loadAdmin()}catch(e){msg('coupleMsg',e.message,true)}finally{loading(false)}}
-async function openLegacyAdmin(){
+async async function openLegacyAdmin(){
+  if(!backstageToken){alert('Sua sessão Backstage expirou. Entre novamente.');return}
   loading(true);
   try{
     const r=await api('createLegacyAdminSession',[{token:backstageToken}]);
     if(!r.ok)return alert(r.message||'Não foi possível abrir a administração completa.');
     localStorage.setItem('meuAssentoV5BackstageToken',r.token);
-    window.open('./admin-v5.html','_blank');
+    window.open('./admin-v5.html?admin=1','_blank');
   }catch(e){alert(e.message||e)}finally{loading(false)}
-}
-function openLegacyAdmin(){
-  if(!backstageToken){alert('Sua sessão Backstage expirou. Entre novamente.');return}
-  localStorage.setItem('meuAssentoV5BackstageToken',backstageToken);
-  window.open('./admin-v5.html?admin=1','_blank');
 }
 function openCodeModal(){qs('newGlobalCode').value='';msg('codeMsg','',false);openModal('codeModal')}
 async function saveGlobalCode(){const r=await api('adminSetFirstAccessCode',[{token:backstageToken,code:qs('newGlobalCode').value}]);msg('codeMsg',r.message,!r.ok)}
