@@ -5,82 +5,605 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Meu Assento | Cabana Church</title>
 <meta name="theme-color" content="#52ABB8">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Meu Assento">
 <link rel="icon" type="image/svg+xml" href="./favicon.svg">
 <style>
-:root{--teal:#52ABB8;--teal-dark:#178e99;--ink:#172033;--muted:#68737d;--bg:#f5f8f9}
-*{box-sizing:border-box}
-html,body{min-height:100%}
-body{
-  margin:0;
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
-  background:
-    radial-gradient(circle at 20% 20%,rgba(82,171,184,.18),transparent 35%),
-    radial-gradient(circle at 80% 80%,rgba(23,142,153,.10),transparent 35%),
-    var(--bg);
-  color:var(--ink);
-  display:grid;
-  place-items:center;
-  padding:24px;
-}
-.shell{width:min(560px,100%);text-align:center}
-.brand{
-  width:92px;height:92px;border-radius:28px;
-  background:linear-gradient(145deg,var(--teal),var(--teal-dark));
-  margin:0 auto 28px;display:grid;place-items:center;
-  box-shadow:0 18px 45px rgba(23,142,153,.22);
-}
-.brand svg{width:62px;height:38px}
-.card{
-  background:rgba(255,255,255,.88);
-  border:1px solid rgba(255,255,255,.9);
-  border-radius:28px;
-  padding:34px 28px;
-  box-shadow:0 20px 60px rgba(23,32,51,.09);
-  backdrop-filter:blur(10px);
-  -webkit-backdrop-filter:blur(10px);
-}
-.eyebrow{
-  display:inline-flex;align-items:center;gap:7px;
-  color:var(--teal-dark);background:#eaf7f8;
-  border-radius:999px;padding:7px 11px;
-  font-size:11px;font-weight:900;letter-spacing:.6px;
-  text-transform:uppercase;margin-bottom:18px
-}
-.dot{width:7px;height:7px;border-radius:50%;background:var(--teal-dark)}
-h1{font-size:34px;line-height:1.08;margin:0 0 14px;letter-spacing:-.8px}
-p{font-size:16px;line-height:1.6;color:var(--muted);margin:0 auto;max-width:430px}
-.divider{width:44px;height:3px;border-radius:999px;background:var(--teal);margin:24px auto}
-.note{font-size:13px;color:#7d878e}
-.church{margin-top:24px;font-size:12px;font-weight:900;letter-spacing:1.5px;color:#7a858c}
-@media(max-width:520px){
-  body{padding:18px}
-  .card{padding:30px 20px;border-radius:24px}
-  h1{font-size:29px}
-  p{font-size:15px}
-  .brand{width:82px;height:82px;border-radius:24px}
+:root{--teal:#52ABB8;--teal2:#178e99;--ink:#172033;--muted:#68737d;--line:#dde7ea;--bg:#f4f7f8;--ok:#197154;--warn:#9c6300;--bad:#a43e3e}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:var(--ink)}
+.env{background:#8a4b08;color:#fff;text-align:center;font-size:11px;font-weight:900;letter-spacing:.7px;padding:7px;position:sticky;top:0;z-index:50}
+header{background:linear-gradient(135deg,var(--teal),var(--teal2));color:#fff;padding:16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{font-weight:950;font-size:20px;letter-spacing:.5px}.brand small{display:block;font-size:9px;letter-spacing:1.7px;margin-top:2px}
+header .actions{display:flex;gap:8px}.btn-backstage{background:#111827!important;color:#fff!important;border-color:#111827!important}.btn-backstage:hover{background:#000!important;border-color:#000!important}.header-btn{border:1px solid rgba(255,255,255,.4);background:rgba(255,255,255,.14);color:#fff;border-radius:12px;padding:9px 11px;font-weight:800;cursor:pointer}
+main{width:min(860px,100%);margin:0 auto;padding:18px 12px 36px}.card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:0 7px 24px rgba(23,32,51,.05);margin-bottom:14px}
+.hero{text-align:center;padding:18px 12px 8px}.hero h1{font-size:27px;margin:0 0 6px}.hero p{color:var(--muted);margin:0;line-height:1.5}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.stack{display:grid;gap:10px}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+label{display:block;font-size:11px;font-weight:850;color:#52616b;margin-bottom:5px}.field{flex:1;min-width:220px}
+select,input{width:100%;border:1px solid #cad6db;border-radius:12px;padding:11px 12px;background:#fff;font-size:15px}
+.btn{border:1px solid #cbd7dc;background:#fff;color:var(--ink);border-radius:12px;padding:10px 13px;font-weight:850;cursor:pointer}.btn.primary{background:var(--teal2);color:#fff;border-color:var(--teal2)}.btn.dark{background:var(--ink);color:#fff;border-color:var(--ink)}.btn.danger{background:#fff0f0;color:var(--bad);border-color:#f0caca}.btn.small{padding:7px 9px;font-size:11px}
+.pill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:5px 8px;font-size:10px;font-weight:850;background:#eef3f5}.pill.ok{background:#e6f6ef;color:var(--ok)}.pill.warn{background:#fff4dc;color:var(--warn)}.pill.bad{background:#fff0f0;color:var(--bad)}
+.service{border:1px solid #e2e9ec;border-radius:15px;padding:13px;margin-top:10px}.service h3{margin:0 0 4px;font-size:15px}.service .meta{color:var(--muted);font-size:12px;margin-bottom:10px}.service .seat{font-size:22px;font-weight:950;color:var(--teal2);margin:8px 0}
+.msg{display:none;margin-top:10px;padding:10px 12px;border-radius:11px;background:#f1f6f7;color:#4c5c65;font-size:13px}.msg.show{display:block}.msg.error{background:#fff0f0;color:var(--bad)}
+.hidden{display:none!important}.section-title{font-size:16px;font-weight:950;margin:0 0 8px}.muted{color:var(--muted);font-size:12px}.tabs{display:flex;gap:6px;overflow:auto;margin-bottom:12px}.tab{white-space:nowrap;border:1px solid #d7e0e4;background:#fff;border-radius:999px;padding:8px 11px;font-size:11px;font-weight:850}.tab.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+.admin-table{width:100%;border-collapse:collapse;font-size:12px}.admin-table th,.admin-table td{padding:8px;border-bottom:1px solid #edf1f3;text-align:left}.scroll{overflow:auto}
+.modal{position:fixed;inset:0;background:rgba(10,20,28,.55);display:none;place-items:center;padding:15px;z-index:70}.modal.show{display:grid}.box{width:min(470px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:20px;padding:18px}.box h2{margin:0 0 5px}.close{float:right;border:0;background:#eef2f4;border-radius:50%;width:34px;height:34px;font-size:20px}
+.loading{position:fixed;inset:0;background:rgba(255,255,255,.72);display:none;place-items:center;z-index:100;font-weight:900}.loading.show{display:grid}
+.autocomplete{position:relative}.autocomplete-list{display:none;position:absolute;left:0;right:0;top:100%;z-index:60;background:#fff;border:1px solid #cad6db;border-radius:12px;box-shadow:0 10px 24px rgba(23,32,51,.12);max-height:260px;overflow:auto;margin-top:4px}.autocomplete-list.show{display:block}.autocomplete-item{padding:10px 12px;cursor:pointer;border-bottom:1px solid #edf1f3}.autocomplete-item:last-child{border-bottom:0}.autocomplete-item:hover{background:#f4f7f8}.identity-row{display:flex;align-items:center;justify-content:space-between;gap:10px}.identity-name{font-weight:900;font-size:16px}
+.v5-header{min-height:110px;background:#58aeba;display:flex;align-items:center;justify-content:center;position:relative;padding:12px 18px;border-bottom:0}
+.v5-header .actions{position:absolute;right:18px;top:50%;transform:translateY(-50%);display:flex;gap:8px}
+.brand-lockup{text-align:center;color:#fff;line-height:1}.brand-mark{display:block;width:72px;height:28px;margin:0 auto 4px}.brand-name{font-size:28px;font-weight:900;letter-spacing:1px}.brand-church{font-size:12px;font-weight:900;letter-spacing:3px;margin-top:4px}
+body{background:#f4f6f8}.hero{text-align:center;padding:28px 12px 10px}.hero h1{font-size:30px;color:#172033}.hero p{color:#697586}
+.card{border-radius:18px;border:1px solid #dbe3e7;box-shadow:0 10px 26px rgba(23,32,51,.06);background:#fff}
+.section-title{font-size:18px;font-weight:900;color:#172033}.admin-headline{max-width:1180px;margin:12px auto 0;padding:0 2px}.admin-headline p{margin:0;color:#697586;font-weight:700}
+.btn{border-radius:12px;font-weight:800}.btn.primary{background:#1eaeb9;border-color:#1eaeb9}.btn.primary:hover{background:#168f99;border-color:#168f99}
+.tabs{background:#fff;border:1px solid #dbe3e7;border-radius:14px;padding:6px;gap:6px;box-shadow:0 6px 18px rgba(23,32,51,.05)}
+.tab{border-radius:10px}.tab.active{background:#172033;color:#fff}
+.service{border:1px solid #e0e6e9;border-radius:16px;background:#fff}
+.env{background:#8a4b08;color:#fff;text-align:center;padding:7px;font-weight:900;letter-spacing:.6px}
+#adminView .hero,#leaderView .hero,#publicView .hero{max-width:900px;margin:0 auto}
+#adminView,#leaderView,#publicView{max-width:1180px;margin:0 auto}
+#adminView>.card,#leaderView>.card,#publicView>.card{margin-left:auto;margin-right:auto}
+@media(max-width:650px){
+  .grid{grid-template-columns:1fr}
+  .field{min-width:100%}
+  .hero h1{font-size:24px}
+  .row .btn{flex:1}
+  .v5-header{min-height:118px;padding:12px 10px;position:relative}
+  .v5-header .brand-lockup{
+    position:absolute;
+    left:50%;
+    top:50%;
+    transform:translate(-50%,-50%);
+    margin:0;
+    z-index:1;
+  }
+  .v5-header .actions{
+    right:10px;
+    top:50%;
+    transform:translateY(-50%);
+    flex-direction:column;
+    align-items:stretch;
+    gap:8px;
+    width:96px;
+    z-index:2;
+  }
+  .v5-header .actions .header-btn{width:100%;min-width:0;padding:10px 8px}
+  .brand-name{font-size:23px}
+  .brand-mark{width:60px}
+  .brand-church{font-size:10px}
 }
 </style>
 </head>
 <body>
-  <main class="shell">
-    <div class="brand" aria-label="Cabana Church">
-      <svg viewBox="0 0 120 42" aria-hidden="true">
-        <path d="M18 27 L51 7 Q60 2 69 7 L102 27 Q106 30 102 35 Q99 39 94 36 L65 19 Q60 16 55 19 L35 31 H61 Q65 31 68 34 L72 38 H33 Q27 38 22 34 L18 31 Q15 29 18 27Z"
-          fill="none" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
+
+<header class="v5-header">
+  <div class="brand-lockup" aria-label="Cabana Church">
+    <svg class="brand-mark" viewBox="0 0 120 42" aria-hidden="true">
+      <path d="M18 27 L51 7 Q60 2 69 7 L102 27 Q106 30 102 35 Q99 39 94 36 L65 19 Q60 16 55 19 L35 31 H61 Q65 31 68 34 L72 38 H33 Q27 38 22 34 L18 31 Q15 29 18 27Z" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <div class="brand-name">CABANA</div>
+    <div class="brand-church">CHURCH</div>
+  </div>
+  <div class="actions">
+    <button class="header-btn btn-backstage" onclick="openBackstageLogin()">Backstage</button>
+    <button class="header-btn hidden" id="logoutBtn" onclick="logoutAll()">Sair</button>
+  </div>
+</header>
+<main>
+  <section id="publicView">
+    <div class="hero"><h1>Confirme sua presença</h1><p>Confirme sua presença no altar para servir com excelência.</p></div>
+    <div class="card">
+      <div class="section-title">Acesso da liderança</div>
+      <div id="leaderSearchWrap" class="field autocomplete"><label>Busque seu nome</label><input id="leaderSearch" autocomplete="off" placeholder="Digite seu nome..." oninput="filterLeaderAutocomplete()" onfocus="filterLeaderAutocomplete()"><input type="hidden" id="leaderSelect"><div id="leaderAutocomplete" class="autocomplete-list"></div></div>
+      <div id="rememberedLeaderWrap" class="identity-row hidden"><div><div class="muted">Este dispositivo</div><div id="rememberedLeaderName" class="identity-name"></div></div></div>
+      <div id="leaderPinWrap" class="field hidden" style="margin-top:10px"><label>PIN de 6 dígitos</label><input id="leaderPin" inputmode="numeric" maxlength="6" type="password" placeholder="••••••"></div>
+      <div class="row" style="margin-top:12px">
+        <button id="leaderLoginBtn" class="btn primary hidden" onclick="smartLeaderLogin()">Entrar</button>
+        <button id="leaderRetryBioBtn" class="btn hidden" onclick="biometricLogin('Leader')">Tentar biometria novamente</button>
+        <button id="leaderPinLoginBtn" class="btn hidden" onclick="loginLeader()">Entrar com PIN</button>
+        <button id="leaderFirstAccessBtn" class="btn hidden" onclick="openFirstAccess()">Primeiro acesso</button>
+      </div>
+      <div id="loginMsg" class="msg"></div>
     </div>
+  </section>
 
-    <section class="card">
-      <div class="eyebrow"><span class="dot"></span> Meu Assento</div>
-      <h1>Vem novidade por aí.</h1>
-      <p>Estamos trabalhando em melhorias no nosso APP para tornar sua experiência ainda mais simples, organizada e especial.</p>
-      <div class="divider"></div>
-      <div class="note">Em breve, uma nova experiência estará disponível para você.</div>
-    </section>
+  <section id="leaderView" class="hidden">
+    <div class="hero"><h1 id="welcomeLeader">Olá!</h1><p>Confirme sua presença no altar para servir com excelência.</p><p id="leaderSubtitle" class="muted"></p></div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <div><div class="section-title">Seu acesso</div><div class="muted">PIN pessoal + acesso rápido no dispositivo</div></div>
+        <button id="enableLeaderPasskeyBtn" class="btn" onclick="enablePasskey('Leader')">Ativar biometria</button>
+      </div>
+    </div>
+    <div class="card" id="spouseCard">
+      <div class="section-title">Cônjuge</div>
+      <div id="spouseContent"></div>
+    </div>
+    <div class="card">
+      <div class="section-title">Próximos cultos</div>
+      <div id="leaderServices"></div>
+    </div>
+  </section>
 
-    <div class="church">CABANA CHURCH</div>
-  </main>
+  <section id="adminView" class="hidden">
+    <div class="admin-headline"><p id="adminWho"></p></div>
+    <div class="card">
+      <div class="row">
+        <button id="enableBackstagePasskeyBtn" class="btn btn-backstage" onclick="enablePasskey('Backstage')">Ativar biometria</button>
+        <button class="btn btn-backstage" onclick="openLegacyAdmin()">Painel de administração</button>
+        <button class="btn btn-backstage" onclick="openCodeModal()">Código de primeiro acesso</button>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="showAdminTab('services',this)">Cultos e distribuição</button>
+      <button class="tab" onclick="showAdminTab('leaders',this)">Lideranças</button>
+      <button class="tab" onclick="showAdminTab('couples',this)">Casais</button>
+    </div>
+    <div id="admin-services" class="card"><div class="section-title">Cultos</div><div id="adminServices"></div></div>
+    <div id="admin-leaders" class="card hidden"><div class="section-title">Lideranças</div><div id="adminLeaders" class="scroll"></div></div>
+    <div id="admin-couples" class="card hidden">
+      <div class="section-title">Vincular casal</div>
+      <div class="grid">
+        <div class="field"><label>Liderança 1</label><select id="couple1"></select></div>
+        <div class="field"><label>Liderança 2</label><select id="couple2"></select></div>
+      </div>
+      <button class="btn primary" style="margin-top:10px" onclick="saveCouple()">Salvar vínculo</button>
+      <div id="coupleMsg" class="msg"></div>
+    </div>
+  </section>
+</main>
+
+<div class="modal" id="firstAccessModal"><div class="box">
+  <button class="close" onclick="closeModal('firstAccessModal')">×</button>
+  <h2>Primeiro acesso</h2><p class="muted">Use o código global informado pelo Backstage e crie seu PIN pessoal.</p>
+  <div class="field"><label>Liderança</label><select id="firstLeader"></select></div>
+  <div class="field" style="margin-top:10px"><label>Código de primeiro acesso</label><input id="firstCode" autocomplete="one-time-code"></div>
+  <div class="field" style="margin-top:10px"><label>Novo PIN de 6 dígitos</label><input id="firstPin" type="password" inputmode="numeric" maxlength="6"></div>
+  <div class="field" style="margin-top:10px"><label>Confirmar PIN</label><input id="firstPin2" type="password" inputmode="numeric" maxlength="6"></div>
+  <button class="btn primary" style="margin-top:12px;width:100%" onclick="doFirstAccess()">Ativar meu acesso</button>
+  <div id="firstMsg" class="msg"></div>
+</div></div>
+
+<div class="modal" id="backstageModal"><div class="box">
+  <button class="close" onclick="closeModal('backstageModal')">×</button>
+  <h2>Acesso Backstage</h2><p class="muted">Entre com seu PIN ou use o acesso biométrico já cadastrado.</p>
+  <div class="field"><label>Usuário</label><select id="backstageUser" onchange="updateBackstageLoginState()"></select></div>
+  <div id="backstagePinWrap" class="field hidden" style="margin-top:10px"><label>PIN</label><input id="backstagePin" type="password" inputmode="numeric" maxlength="6"></div>
+  <div class="row" style="margin-top:12px">
+    <button id="backstageLoginBtn" class="btn primary hidden" onclick="smartBackstageLogin()">Entrar</button>
+    <button id="backstageRetryBioBtn" class="btn hidden" onclick="biometricLogin('Backstage')">Tentar biometria novamente</button>
+    <button id="backstagePinLoginBtn" class="btn hidden" onclick="loginBackstage()">Entrar com PIN</button>
+  </div>
+  <div id="backstageMsg" class="msg"></div>
+</div></div>
+
+<div class="modal" id="leaderEditModal"><div class="box">
+  <button class="close" onclick="closeModal('leaderEditModal')">×</button>
+  <h2 id="leaderEditTitle">Editar liderança</h2>
+  <p class="muted" id="leaderEditSubtitle"></p>
+  <input type="hidden" id="editLeaderId">
+  <div class="field" style="margin-top:12px">
+    <label>Vínculo ministerial</label>
+    <select id="editMinisterial">
+      <option value="Da Casa">Da Casa</option>
+      <option value="Não Reconhecido">Não Reconhecido</option>
+    </select>
+  </div>
+  <div class="field" style="margin-top:12px">
+    <label>Cônjuge</label>
+    <select id="editSpouse"></select>
+  </div>
+  <div class="row" style="margin-top:14px">
+    <button class="btn primary" onclick="saveLeaderEdit()">Salvar alterações</button>
+    <button class="btn danger" onclick="resetLeaderFromEdit()">Redefinir acesso</button>
+  </div>
+  <div id="leaderEditMsg" class="msg"></div>
+</div></div>
+
+<div class="modal" id="confirmPresenceModal"><div class="box">
+  <button class="close" onclick="closeModal('confirmPresenceModal')">×</button>
+  <h2>Confirmar presença</h2>
+  <p class="muted" id="confirmPresenceText"></p>
+  <div id="confirmSpouseWrap" class="hidden" style="margin-top:12px">
+    <label><input type="checkbox" id="confirmSpouseCheck" style="width:auto"> Confirmar também para o cônjuge</label>
+  </div>
+  <button class="btn primary" style="margin-top:12px;width:100%" onclick="submitPresenceConfirmation()">Confirmar presença</button>
+</div></div>
+
+<div class="modal" id="cancelModal"><div class="box">
+  <button class="close" onclick="closeModal('cancelModal')">×</button>
+  <h2>Cancelar presença</h2><p class="muted" id="cancelText"></p>
+  <div id="cancelOptions" class="stack" style="margin-top:12px"></div>
+</div></div>
+
+<div class="modal" id="codeModal"><div class="box">
+  <button class="close" onclick="closeModal('codeModal')">×</button>
+  <h2>Código global de primeiro acesso</h2>
+  <p class="muted">Somente Administrador pode alterá-lo. O código não fica armazenado em texto puro.</p>
+  <div class="field"><label>Novo código</label><input id="newGlobalCode"></div>
+  <button class="btn primary" style="margin-top:12px;width:100%" onclick="saveGlobalCode()">Alterar código</button>
+  <div id="codeMsg" class="msg"></div>
+</div></div>
+
+<div class="loading" id="loading">Atualizando Meu Assento...</div>
+
+<script>
+const API='https://hqqsymgbepgzxydmgtmd.supabase.co/functions/v1/meu-assento-v6-api';
+let bootstrap={leaders:[],services:[],backstageUsers:[]}, leaderToken=localStorage.getItem('v6LeaderToken')||'', backstageToken=localStorage.getItem('v6BackstageToken')||'', leaderHome=null, adminData=null, cancelServiceId='';
+const qs=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+function loading(v){qs('loading').className=v?'loading show':'loading'}
+function openModal(id){qs(id).classList.add('show')} function closeModal(id){qs(id).classList.remove('show')}
+function msg(id,t,e){const x=qs(id);x.textContent=t||'';x.className='msg'+(t?' show':'')+(e?' error':'')}
+async function api(method,args=[]){const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({method,args})});const j=await r.json();if(!r.ok)throw new Error(j.message||'Falha de comunicação');return j}
+function dt(s){try{return new Date(s).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'})}catch{return s}}
+function serviceName(s){return (s.name||'Culto')+' · '+dt(s.starts_at)}
+function fillSelect(id,rows,valueKey='id',labelKey='displayName',blank='Selecione...'){qs(id).innerHTML='<option value="">'+blank+'</option>'+rows.map(x=>'<option value="'+esc(x[valueKey])+'">'+esc(x[labelKey])+'</option>').join('')}
+async function init(){
+  loading(true);
+  try{
+    const b=await api('getV6Bootstrap');bootstrap=b;
+    fillSelect('firstLeader',b.leaders);restoreRememberedLeader();updateLeaderLoginState();
+    fillSelect('couple1',b.leaders);fillSelect('couple2',b.leaders);
+    qs('backstageUser').innerHTML='<option value="">Selecione...</option>'+b.backstageUsers.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+' · '+esc(x.profile)+'</option>').join('');
+    updateBackstageLoginState();
+    if(backstageToken) await loadAdmin(); else if(leaderToken) await loadLeader();
+  }catch(e){msg('loginMsg',e.message,true)}finally{loading(false)}
+}
+function normalizeText(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim()}
+function filterLeaderAutocomplete(){
+  const q=normalizeText(qs('leaderSearch').value);
+  const rows=(bootstrap.leaders||[]).filter(x=>!q||normalizeText(x.displayName).includes(q)).slice(0,12);
+  qs('leaderAutocomplete').innerHTML=rows.map(x=>'<div class="autocomplete-item" onclick="selectLeader(\''+x.id+'\')"><strong>'+esc(x.displayName)+'</strong><div class="muted">'+esc(x.title||'')+'</div></div>').join('')||'<div class="autocomplete-item muted">Nenhum nome encontrado.</div>';
+  qs('leaderAutocomplete').classList.add('show');
+}
+function selectLeader(id){
+  const leader=(bootstrap.leaders||[]).find(x=>x.id===id);if(!leader)return;
+  qs('leaderSelect').value=id;
+  qs('leaderSearch').value=leader.displayName;
+  qs('leaderAutocomplete').classList.remove('show');
+  updateLeaderLoginState();
+}
+function rememberLeader(id){
+  if(id)localStorage.setItem('v6RememberedLeaderId',id);
+}
+function restoreRememberedLeader(){
+  const id=localStorage.getItem('v6RememberedLeaderId')||'';
+  const leader=(bootstrap.leaders||[]).find(x=>x.id===id);
+  if(!leader){
+    qs('leaderSearchWrap').classList.remove('hidden');
+    qs('rememberedLeaderWrap').classList.add('hidden');
+    qs('leaderSelect').value='';
+    return;
+  }
+  qs('leaderSelect').value=id;
+  qs('rememberedLeaderName').textContent=leader.displayName;
+  qs('leaderSearchWrap').classList.add('hidden');
+  qs('rememberedLeaderWrap').classList.remove('hidden');
+}
+function updateLeaderLoginState(){
+  const id=qs('leaderSelect').value;
+  const leader=(bootstrap.leaders||[]).find(x=>x.id===id);
+  const selected=!!leader;
+  const active=!!(leader&&leader.accessEnabled);
+  const hasPasskey=!!(leader&&leader.hasPasskey);
+  qs('leaderPinWrap').classList.add('hidden');
+  qs('leaderLoginBtn').classList.toggle('hidden',!active);
+  qs('leaderRetryBioBtn').classList.add('hidden');
+  qs('leaderPinLoginBtn').classList.add('hidden');
+  qs('leaderFirstAccessBtn').classList.toggle('hidden',!selected||active);
+  qs('leaderLoginBtn').dataset.hasPasskey=hasPasskey?'1':'0';
+  msg('loginMsg','',false);
+}
+function openFirstAccess(){qs('firstLeader').value=qs('leaderSelect').value;openModal('firstAccessModal')}
+async function doFirstAccess(){
+  const a=qs('firstPin').value,b=qs('firstPin2').value;if(a!==b)return msg('firstMsg','Os PINs não conferem.',true);
+  loading(true);try{const r=await api('firstAccess',[{leaderId:qs('firstLeader').value,code:qs('firstCode').value,pin:a}]);if(!r.ok)return msg('firstMsg',r.message,true);leaderToken=r.token;localStorage.setItem('v6LeaderToken',leaderToken);rememberLeader(qs('firstLeader').value);closeModal('firstAccessModal');await loadLeader();setTimeout(()=>{if(confirm('Deseja ativar Face ID, digital ou desbloqueio do aparelho neste dispositivo?'))enablePasskey('Leader')},200)}catch(e){msg('firstMsg',e.message,true)}finally{loading(false)}
+}
+async function smartLeaderLogin(){
+  const id=qs('leaderSelect').value;
+  const leader=(bootstrap.leaders||[]).find(x=>x.id===id);
+  if(!leader)return;
+  if(leader.hasPasskey){
+    const ok=await biometricLogin('Leader',true);
+    if(ok)return;
+    qs('leaderRetryBioBtn').classList.remove('hidden');
+    qs('leaderPinWrap').classList.remove('hidden');
+    qs('leaderPinLoginBtn').classList.remove('hidden');
+    msg('loginMsg','Não foi possível concluir o acesso biométrico. Tente novamente ou entre com seu PIN.',true);
+    return;
+  }
+  qs('leaderPinWrap').classList.remove('hidden');
+  qs('leaderPinLoginBtn').classList.remove('hidden');
+  qs('leaderLoginBtn').classList.add('hidden');
+}
+async function loginLeader(){
+  loading(true);try{const r=await api('loginLeader',[{leaderId:qs('leaderSelect').value,pin:qs('leaderPin').value}]);if(!r.ok){if(r.code==='FIRST_ACCESS_REQUIRED')openFirstAccess();return msg('loginMsg',r.message,true)}leaderToken=r.token;localStorage.setItem('v6LeaderToken',leaderToken);rememberLeader(qs('leaderSelect').value);await loadLeader()}catch(e){msg('loginMsg',e.message,true)}finally{loading(false)}
+}
+async function loadLeader(){
+  const r=await api('getLeaderHome',[leaderToken]);if(!r.ok){leaderToken='';localStorage.removeItem('v6LeaderToken');return}
+  leaderHome=r;qs('publicView').classList.add('hidden');qs('adminView').classList.add('hidden');qs('leaderView').classList.remove('hidden');qs('logoutBtn').classList.remove('hidden');
+  qs('welcomeLeader').textContent='Olá, '+r.leader.displayName;
+  qs('leaderSubtitle').textContent=r.spouse?'Cônjuge vinculado: '+r.spouse.displayName:'Seu perfil está pronto para confirmar presença.';
+  qs('enableLeaderPasskeyBtn').classList.toggle('hidden',!!r.hasPasskey);
+  renderSpouseCard();
+  renderLeaderServices();
+}
+function renderSpouseCard(){
+  const box=qs('spouseContent');
+  if(leaderHome.spouse){
+    box.innerHTML='<div class="row" style="justify-content:space-between"><div><strong>'+esc(leaderHome.spouse.displayName)+'</strong><div class="muted">'+esc(leaderHome.spouse.title||'')+'</div></div><span class="pill ok">Vinculado</span></div>';
+    return;
+  }
+  const candidates=(bootstrap.leaders||[]).filter(x=>x.id!==leaderHome.leader.id);
+  box.innerHTML='<div class="muted" style="margin-bottom:10px">Associe seu cônjuge para poder confirmar a presença de vocês dois no mesmo culto.</div><div class="field"><label>Selecione o cônjuge</label><select id="leaderSpouseSelect"><option value="">Selecione...</option>'+candidates.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.displayName)+' · '+esc(x.title||'')+'</option>').join('')+'</select></div><button class="btn primary" style="margin-top:10px" onclick="requestSpouseLink()">Associar cônjuge</button><div id="spouseMsg" class="msg"></div>';
+}
+async function requestSpouseLink(){
+  const spouseId=qs('leaderSpouseSelect')?.value;
+  if(!spouseId)return msg('spouseMsg','Selecione o cônjuge.',true);
+  loading(true);
+  try{
+    const r=await api('leaderLinkSpouse',[{token:leaderToken,spouseId}]);
+    if(!r.ok)return msg('spouseMsg',r.message||'Não foi possível associar.',true);
+    await loadLeader();
+  }catch(e){msg('spouseMsg',e.message,true)}finally{loading(false)}
+}
+function renderLeaderServices(){
+  qs('leaderServices').innerHTML=(leaderHome.services||[]).map(s=>{
+    const p=s.presence,a=s.assignment,confirmed=p&&p.status==='Confirmado',cancelled=p&&p.status==='Cancelado';
+    const now=Date.now(),confirmClose=new Date(s.confirmCloseAt).getTime(),cancelClose=new Date(s.cancelCloseAt).getTime();
+    let actions='';
+    if(!confirmed&&now<confirmClose){
+      actions='<button class="btn primary" onclick="openPresenceConfirmation(\''+s.id+'\')">Confirmar presença</button>';
+    }else if(confirmed&&now<cancelClose){
+      actions='<button class="btn danger" onclick="openCancel(\''+s.id+'\')">Cancelar presença</button>';
+    }else if(confirmed&&now>=cancelClose){
+      actions='<button class="btn" onclick="contactBackstage()">Entrar em contato com o Backstage</button>';
+    }
+    const state=confirmed?'<span class="pill ok">Presença confirmada</span>':cancelled?'<span class="pill bad">Cancelada</span>':now>=confirmClose?'<span class="pill warn">Confirmação encerrada</span>':'<span class="pill">Aguardando confirmação</span>';
+    const seat=a&&a.seats&&a.seats.length
+      ?'<div class="seat">'+(a.seats.length>1?'Assentos ':'Assento ')+a.seats.map(x=>x.seatNumber?String(x.seatNumber).padStart(2,'0'):(x.label||x.seatId)).join(' e ')+'</div><div class="muted">'+a.seats.map(x=>esc(x.displayName)+' · '+(x.seatNumber?'Assento '+String(x.seatNumber).padStart(2,'0'):(x.label||x.seatId))).join('<br>')+'<br>Distribuição '+a.runVersion+'</div>':'';
+    return '<div class="service"><h3>'+esc(s.name)+'</h3><div class="meta">'+dt(s.starts_at)+'</div>'+state+seat+'<div class="row" style="margin-top:10px">'+actions+'</div></div>'
+  }).join('')||'<div class="muted">Nenhum culto disponível.</div>'
+}
+let confirmServiceId='';
+function openPresenceConfirmation(serviceId){
+  confirmServiceId=serviceId;
+  const s=(leaderHome.services||[]).find(x=>x.id===serviceId);
+  qs('confirmPresenceText').textContent=s?'Confirmar presença em '+s.name+'?':'Confirmar presença neste culto?';
+  qs('confirmSpouseWrap').classList.toggle('hidden',!leaderHome.spouse);
+  qs('confirmSpouseCheck').checked=false;
+  openModal('confirmPresenceModal');
+}
+async function submitPresenceConfirmation(){
+  closeModal('confirmPresenceModal');
+  const includeSpouse=!!(leaderHome.spouse&&qs('confirmSpouseCheck').checked);
+  loading(true);
+  try{
+    const r=await api('confirmPresence',[{token:leaderToken,serviceId:confirmServiceId,includeSpouse}]);
+    if(!r.ok)return alert(r.message);
+    await loadLeader();
+  }catch(e){alert(e.message)}finally{loading(false)}
+}
+function openCancel(id){
+  cancelServiceId=id;
+  const s=(leaderHome.services||[]).find(x=>x.id===id);
+  const spouseConfirmed=!!(s&&s.spousePresence&&s.spousePresence.status==='Confirmado');
+  qs('cancelText').textContent='Você pode cancelar pelo aplicativo até 30 minutos antes do culto. Entre 1h e 30min antes, o Backstage será alertado.';
+  let html='<button class="btn danger" style="width:100%" onclick="confirmCancel(\'self\')">Cancelar somente minha presença</button>';
+  if(leaderHome.spouse&&spouseConfirmed){
+    html+='<button class="btn" style="width:100%" onclick="confirmCancel(\'spouse\')">Cancelar somente a presença de '+esc(leaderHome.spouse.displayName)+'</button>';
+    html+='<button class="btn danger" style="width:100%" onclick="confirmCancel(\'couple\')">Cancelar a presença do casal</button>';
+  }
+  qs('cancelOptions').innerHTML=html;
+  openModal('cancelModal');
+}
+async function confirmCancel(scope){
+  closeModal('cancelModal');loading(true);
+  try{
+    const r=await api('cancelPresence',[{token:leaderToken,serviceId:cancelServiceId,scope}]);
+    if(!r.ok){if(r.code==='CONTACT_BACKSTAGE')return contactBackstage();return alert(r.message)}
+    if(r.late)alert('Cancelamento tardio registrado. O Backstage foi sinalizado para reorganização.');
+    await loadLeader();
+  }catch(e){alert(e.message)}finally{loading(false)}
+}
+function contactBackstage(){const n=bootstrap.backstageWhatsApp;if(!n)return alert('Canal do Backstage não configurado.');window.open('https://wa.me/55'+String(n).replace(/\D/g,''),'_blank')}
+function updateBackstageLoginState(){
+  const id=qs('backstageUser').value;
+  const user=(bootstrap.backstageUsers||[]).find(x=>x.id===id);
+  const selected=!!user;
+  const hasPasskey=!!(user&&user.hasPasskey);
+  qs('backstagePinWrap').classList.add('hidden');
+  qs('backstageLoginBtn').classList.toggle('hidden',!selected);
+  qs('backstageRetryBioBtn').classList.add('hidden');
+  qs('backstagePinLoginBtn').classList.add('hidden');
+  qs('backstageLoginBtn').dataset.hasPasskey=hasPasskey?'1':'0';
+  msg('backstageMsg','',false);
+}
+async function smartBackstageLogin(){
+  const id=qs('backstageUser').value;
+  const user=(bootstrap.backstageUsers||[]).find(x=>x.id===id);
+  if(!user)return;
+  if(user.hasPasskey){
+    const ok=await biometricLogin('Backstage',true);
+    if(ok)return;
+    qs('backstageRetryBioBtn').classList.remove('hidden');
+    qs('backstagePinWrap').classList.remove('hidden');
+    qs('backstagePinLoginBtn').classList.remove('hidden');
+    msg('backstageMsg','Não foi possível concluir o acesso biométrico. Tente novamente ou entre com seu PIN.',true);
+    return;
+  }
+  qs('backstagePinWrap').classList.remove('hidden');
+  qs('backstagePinLoginBtn').classList.remove('hidden');
+  qs('backstageLoginBtn').classList.add('hidden');
+}
+function openBackstageLogin(){updateBackstageLoginState();openModal('backstageModal')}
+async function loginBackstage(){loading(true);try{const r=await api('loginBackstage',[{userId:qs('backstageUser').value,pin:qs('backstagePin').value}]);if(!r.ok)return msg('backstageMsg',r.message,true);backstageToken=r.token;localStorage.setItem('v6BackstageToken',backstageToken);closeModal('backstageModal');await loadAdmin()}catch(e){msg('backstageMsg',e.message,true)}finally{loading(false)}}
+async function loadAdmin(){
+  const r=await api('getAdminDashboard',[backstageToken]);if(!r.ok){backstageToken='';localStorage.removeItem('v6BackstageToken');return}
+  adminData=r;qs('publicView').classList.add('hidden');qs('leaderView').classList.add('hidden');qs('adminView').classList.remove('hidden');qs('logoutBtn').classList.remove('hidden');qs('adminWho').textContent='Logado como '+r.user.name+' · '+r.user.profile;qs('enableBackstagePasskeyBtn').classList.toggle('hidden',!!r.user.hasPasskey);renderAdmin();
+}
+function showAdminTab(name,el){['services','leaders','couples'].forEach(x=>qs('admin-'+x).classList.toggle('hidden',x!==name));document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));el.classList.add('active')}
+function renderAdmin(){
+  qs('adminServices').innerHTML=(adminData.services||[]).map(s=>{
+    const c=(adminData.confirmations||[]).filter(x=>x.service_id===s.id&&x.status==='Confirmado').length;
+    const late=(adminData.confirmations||[]).filter(x=>x.service_id===s.id&&x.status==='Cancelado'&&x.late_cancellation).length;
+    const latest=(adminData.runs||[]).find(x=>x.service_id===s.id&&x.status==='Concluída');
+    return '<div class="service"><h3>'+esc(s.name)+'</h3><div class="meta">'+dt(s.starts_at)+'</div><div class="row"><span class="pill '+(s.status==='Aberto'?'ok':s.status==='Fechado'?'bad':'')+'">'+esc(s.status)+'</span><span class="pill ok">'+c+' confirmados</span>'+(late?'<span class="pill bad">'+late+' cancelamento(s) tardio(s)</span>':'')+(latest?'<span class="pill">Distribuição '+latest.version+'</span>':'')+'</div><div class="row" style="margin-top:10px"><button class="btn '+(s.status==='Aberto'?'danger':'primary')+'" onclick="setServiceConfirmationStatus(\''+s.id+'\',\''+(s.status==='Aberto'?'Fechado':'Aberto')+'\')">'+(s.status==='Aberto'?'Fechar confirmações':'Liberar confirmações')+'</button><button class="btn primary" onclick="runAllocation(\''+s.id+'\')">'+(latest?'Refazer distribuição':'Fazer distribuição')+'</button><button class="btn" onclick="showAllocation(\''+s.id+'\')">Ver assentos</button></div></div>'
+  }).join('');
+  qs('adminLeaders').innerHTML='<table class="admin-table"><thead><tr><th>Liderança</th><th>Acesso</th><th></th></tr></thead><tbody>'+(adminData.leaders||[]).map(l=>'<tr><td><strong>'+esc(l.displayName)+'</strong><br><span class="muted">'+esc(l.title)+'</span></td><td>'+(l.accessEnabled?'<span class="pill ok">Ativado</span>':'<span class="pill">Não ativado</span>')+'</td><td><button class="btn small" onclick="openLeaderEdit(\''+l.id+'\')">Editar</button></td></tr>').join('')+'</tbody></table>';
+}
+async function setServiceConfirmationStatus(id,status){
+  const verb=status==='Aberto'?'liberar as confirmações':'fechar as confirmações';
+  if(!confirm('Deseja '+verb+' deste culto?'))return;
+  loading(true);
+  try{
+    const r=await api('adminSetServiceStatus',[{token:backstageToken,serviceId:id,status}]);
+    if(!r.ok)return alert(r.message||'Não foi possível alterar o culto.');
+    await loadAdmin();
+  }catch(e){alert(e.message)}finally{loading(false)}
+}
+async function runAllocation(id){if(!confirm('Executar a distribuição agora? Uma distribuição anterior ficará registrada no histórico.'))return;loading(true);try{const r=await api('runAllocation',[{token:backstageToken,serviceId:id}]);if(!r.ok)return alert(r.message);alert('Distribuição '+r.version+' concluída. '+r.assigned+' liderança(s) alocada(s).'+(r.unassigned.length?' '+r.unassigned.length+' sem assento.':''));await loadAdmin();await showAllocation(id)}catch(e){alert(e.message)}finally{loading(false)}}
+async function showAllocation(id){loading(true);try{const r=await api('getAllocation',[{token:backstageToken,serviceId:id}]);if(!r.run)return alert('Ainda não existe distribuição para este culto.');const lines=(r.allocations||[]).map(a=>'Assento '+String(a.seats?.seat_number||a.seat_id).padStart(2,'0')+' — '+(a.leaders?.display_name||'')).join('\n');alert('Distribuição '+r.run.version+'\n\n'+lines)}catch(e){alert(e.message)}finally{loading(false)}}
+function findCoupleForLeader(leaderUuid){
+  return (adminData.couples||[]).find(c=>c.leader_1_id===leaderUuid||c.leader_2_id===leaderUuid)||null;
+}
+function openLeaderEdit(id){
+  const l=(adminData.leaders||[]).find(x=>x.id===id);
+  if(!l)return;
+  qs('editLeaderId').value=id;
+  qs('leaderEditTitle').textContent=l.displayName;
+  qs('leaderEditSubtitle').textContent=l.title+' · '+(l.accessEnabled?'Acesso ativado':'Acesso não ativado');
+  qs('editMinisterial').value=l.ministerialLink||'Não Reconhecido';
+  const options=(adminData.leaders||[]).filter(x=>x.id!==id);
+  let currentSpouseId='';
+  const couple=findCoupleForLeader(l.uuid);
+  if(couple){
+    const spouseUuid=couple.leader_1_id===l.uuid?couple.leader_2_id:couple.leader_1_id;
+    const spouse=options.find(x=>x.uuid===spouseUuid);
+    if(spouse)currentSpouseId=spouse.id;
+  }
+  qs('editSpouse').innerHTML='<option value="">Sem vínculo</option>'+options.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.displayName)+' · '+esc(x.title||'')+'</option>').join('');
+  qs('editSpouse').value=currentSpouseId;
+  msg('leaderEditMsg','',false);
+  openModal('leaderEditModal');
+}
+async function saveLeaderEdit(){
+  const leaderId=qs('editLeaderId').value;
+  loading(true);
+  try{
+    const r=await api('adminUpdateLeaderProfile',[{token:backstageToken,leaderId,ministerialLink:qs('editMinisterial').value,spouseId:qs('editSpouse').value||null}]);
+    if(!r.ok)return msg('leaderEditMsg',r.message||'Não foi possível salvar.',true);
+    await loadAdmin();
+    closeModal('leaderEditModal');
+  }catch(e){msg('leaderEditMsg',e.message,true)}finally{loading(false)}
+}
+async function resetLeaderFromEdit(){
+  const id=qs('editLeaderId').value;
+  if(!confirm('Redefinir o acesso desta liderança? PIN, sessões e passkeys serão removidos.'))return;
+  loading(true);
+  try{
+    const r=await api('adminResetLeaderAccess',[{token:backstageToken,leaderId:id}]);
+    if(!r.ok)return msg('leaderEditMsg',r.message||'Não foi possível redefinir.',true);
+    await loadAdmin();
+    closeModal('leaderEditModal');
+  }catch(e){msg('leaderEditMsg',e.message,true)}finally{loading(false)}
+}
+async function saveCouple(){loading(true);try{const r=await api('adminLinkCouple',[{token:backstageToken,leader1Id:qs('couple1').value,leader2Id:qs('couple2').value}]);msg('coupleMsg',r.message,!r.ok);if(r.ok)await loadAdmin()}catch(e){msg('coupleMsg',e.message,true)}finally{loading(false)}}
+async function openLegacyAdmin(){
+  if(!backstageToken){alert('Sua sessão Backstage expirou. Entre novamente.');return}
+  loading(true);
+  try{
+    const r=await api('createLegacyAdminSession',[{token:backstageToken}]);
+    if(!r.ok)return alert(r.message||'Não foi possível abrir a administração completa.');
+    localStorage.setItem('meuAssentoV5BackstageToken',r.token);
+    window.open('./admin-v5.html?admin=1','_blank');
+  }catch(e){alert(e.message||e)}finally{loading(false)}
+}
+function openCodeModal(){qs('newGlobalCode').value='';msg('codeMsg','',false);openModal('codeModal')}
+async function saveGlobalCode(){const r=await api('adminSetFirstAccessCode',[{token:backstageToken,code:qs('newGlobalCode').value}]);msg('codeMsg',r.message,!r.ok)}
+function b64urlToBuf(s){
+  s=String(s||'').replace(/-/g,'+').replace(/_/g,'/');
+  while(s.length%4)s+='=';
+  const bin=atob(s), out=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++)out[i]=bin.charCodeAt(i);
+  return out.buffer;
+}
+function bufToB64url(buf){
+  const bytes=new Uint8Array(buf||new ArrayBuffer(0));
+  let bin=''; for(const b of bytes)bin+=String.fromCharCode(b);
+  return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function publicKeyCreationOptions(o){
+  const x=structuredClone(o);
+  x.challenge=b64urlToBuf(x.challenge);
+  if(x.user&&x.user.id)x.user.id=b64urlToBuf(x.user.id);
+  if(Array.isArray(x.excludeCredentials))x.excludeCredentials=x.excludeCredentials.map(c=>({...c,id:b64urlToBuf(c.id)}));
+  return x;
+}
+function publicKeyRequestOptions(o){
+  const x=structuredClone(o);
+  x.challenge=b64urlToBuf(x.challenge);
+  if(Array.isArray(x.allowCredentials))x.allowCredentials=x.allowCredentials.map(c=>({...c,id:b64urlToBuf(c.id)}));
+  return x;
+}
+function registrationCredentialJSON(cred){
+  const r=cred.response;
+  return {
+    id:cred.id,rawId:bufToB64url(cred.rawId),type:cred.type,
+    authenticatorAttachment:cred.authenticatorAttachment||undefined,
+    clientExtensionResults:cred.getClientExtensionResults?cred.getClientExtensionResults():{},
+    response:{
+      clientDataJSON:bufToB64url(r.clientDataJSON),
+      attestationObject:bufToB64url(r.attestationObject),
+      transports:r.getTransports?r.getTransports():[],
+      publicKeyAlgorithm:r.getPublicKeyAlgorithm?r.getPublicKeyAlgorithm():undefined,
+      publicKey:r.getPublicKey&&r.getPublicKey()?bufToB64url(r.getPublicKey()):undefined
+    }
+  };
+}
+function authenticationCredentialJSON(cred){
+  const r=cred.response;
+  return {
+    id:cred.id,rawId:bufToB64url(cred.rawId),type:cred.type,
+    authenticatorAttachment:cred.authenticatorAttachment||undefined,
+    clientExtensionResults:cred.getClientExtensionResults?cred.getClientExtensionResults():{},
+    response:{
+      clientDataJSON:bufToB64url(r.clientDataJSON),
+      authenticatorData:bufToB64url(r.authenticatorData),
+      signature:bufToB64url(r.signature),
+      userHandle:r.userHandle?bufToB64url(r.userHandle):null
+    }
+  };
+}
+function webAuthnAvailable(){return !!(window.PublicKeyCredential&&navigator.credentials&&navigator.credentials.create&&navigator.credentials.get)}
+async function enablePasskey(ownerType){
+  if(!webAuthnAvailable())return alert('Este navegador ou dispositivo não oferece suporte a biometria/passkeys.');
+  const token=ownerType==='Leader'?leaderToken:backstageToken;
+  try{
+    const x=await api('passkeyRegisterOptions',[{ownerType,token}]);if(!x.ok)return alert(x.message);
+    const cred=await navigator.credentials.create({publicKey:publicKeyCreationOptions(x.options)});
+    if(!cred)throw new Error('Cadastro biométrico cancelado.');
+    const response=registrationCredentialJSON(cred);
+    const y=await api('passkeyRegisterVerify',[{ownerType,token,response,deviceLabel:navigator.platform||'Dispositivo'}]);
+    alert(y.message||'Acesso biométrico ativado.');
+    if(ownerType==='Leader')await loadLeader();else await loadAdmin();
+  }catch(e){alert('Não foi possível ativar a biometria: '+(e.message||e))}
+}
+async function biometricLogin(ownerType,silent=false){
+  if(!webAuthnAvailable()){if(!silent)alert('Este navegador ou dispositivo não oferece suporte a biometria/passkeys.');return false}
+  const ownerId=ownerType==='Leader'?qs('leaderSelect').value:qs('backstageUser').value;if(!ownerId){if(!silent)alert('Selecione seu usuário primeiro.');return false}
+  try{
+    const x=await api('passkeyAuthOptions',[{ownerType,ownerId}]);if(!x.ok){if(!silent)alert(x.message);return false}
+    const cred=await navigator.credentials.get({publicKey:publicKeyRequestOptions(x.options)});
+    if(!cred)throw new Error('Autenticação biométrica cancelada.');
+    const response=authenticationCredentialJSON(cred);
+    const y=await api('passkeyAuthVerify',[{ownerType,ownerId,response}]);if(!y.ok){if(!silent)alert(y.message);return false}
+    if(ownerType==='Leader'){leaderToken=y.token;localStorage.setItem('v6LeaderToken',leaderToken);rememberLeader(qs('leaderSelect').value);await loadLeader()}else{backstageToken=y.token;localStorage.setItem('v6BackstageToken',backstageToken);closeModal('backstageModal');await loadAdmin()}
+    return true;
+  }catch(e){if(!silent)alert('Não foi possível usar a biometria: '+(e.message||e));return false}
+}
+function logoutAll(){leaderToken='';backstageToken='';leaderHome=null;adminData=null;localStorage.removeItem('v6LeaderToken');localStorage.removeItem('v6BackstageToken');qs('leaderView').classList.add('hidden');qs('adminView').classList.add('hidden');qs('publicView').classList.remove('hidden');qs('logoutBtn').classList.add('hidden');restoreRememberedLeader();updateLeaderLoginState()}
+document.addEventListener('click',e=>{if(!e.target.closest('#leaderSearchWrap'))qs('leaderAutocomplete')?.classList.remove('show')});
+init();
+</script>
 </body>
 </html>
