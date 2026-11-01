@@ -646,7 +646,15 @@ async function setServiceConfirmationStatus(id,status){
   }catch(e){alert(e.message)}finally{loading(false)}
 }
 async function runAllocation(id){if(!confirm('Executar a distribuição agora? Uma distribuição anterior ficará registrada no histórico.'))return;loading(true);try{const r=await api('runAllocation',[{token:backstageToken,serviceId:id}]);if(!r.ok)return alert(r.message);alert('Distribuição '+r.version+' concluída. '+r.assigned+' liderança(s) alocada(s).'+(r.unassigned.length?' '+r.unassigned.length+' sem assento.':''));await loadAdmin();await showAllocation(id)}catch(e){alert(e.message)}finally{loading(false)}}
-async function showAllocation(id){loading(true);try{const r=await api('getAllocation',[{token:backstageToken,serviceId:id}]);if(!r.run)return alert('Ainda não existe distribuição para este culto.');const lines=(r.allocations||[]).map(a=>'Assento '+String(a.seats?.seat_number||a.seat_id).padStart(2,'0')+' — '+(a.leaders?.display_name||'')).join('\n');alert('Distribuição '+r.run.version+'\n\n'+lines)}catch(e){alert(e.message)}finally{loading(false)}}
+async function showAllocation(id){loading(true);try{
+  const r=await api('getAllocation',[{token:backstageToken,serviceId:id}]);
+  const auto=(r.allocations||[]).map(a=>'Assento '+String(a.seats?.seat_number||a.seat_id).padStart(2,'0')+' — '+(a.leaders?.display_name||'')+' (automático)');
+  const manual=(r.manualReservations||[]).map(x=>'Assento '+String(x.seats?.seat_number||x.seat_id).padStart(2,'0')+' — '+(x.reservation_type==='Reserva Especial'?(x.special_category||'Reserva Especial'):(x.display_name_snapshot||''))+' (manual)');
+  const lines=[...manual,...auto];
+  if(!lines.length)return alert('Ainda não existem assentos reservados ou distribuídos para este culto.');
+  const title=r.run?'Assentos do culto · distribuição '+r.run.version:'Assentos do culto';
+  alert(title+'\n\n'+lines.join('\n'));
+}catch(e){alert(e.message)}finally{loading(false)}}
 function findCoupleForLeader(leaderUuid){
   return (adminData.couples||[]).find(c=>c.leader_1_id===leaderUuid||c.leader_2_id===leaderUuid)||null;
 }
