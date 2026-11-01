@@ -278,7 +278,8 @@ function renderLeaderServices(){
       actions='<button class="btn" onclick="contactBackstage()">Entrar em contato com o Backstage</button>';
     }
     const state=confirmed?'<span class="pill ok">Presença confirmada</span>':cancelled?'<span class="pill bad">Cancelada</span>':now>=confirmClose?'<span class="pill warn">Confirmação encerrada</span>':'<span class="pill">Aguardando confirmação</span>';
-    const seat=a?'<div class="seat">'+(a.seatNumber?'Assento '+String(a.seatNumber).padStart(2,'0'):(a.label||a.seatId))+'</div><div class="muted">Distribuição '+a.runVersion+'</div>':'';
+    const seat=a&&a.seats&&a.seats.length
+      ?'<div class="seat">'+(a.seats.length>1?'Assentos ':'Assento ')+a.seats.map(x=>x.seatNumber?String(x.seatNumber).padStart(2,'0'):(x.label||x.seatId)).join(' e ')+'</div><div class="muted">'+a.seats.map(x=>esc(x.displayName)+' · '+(x.seatNumber?'Assento '+String(x.seatNumber).padStart(2,'0'):(x.label||x.seatId))).join('<br>')+'<br>Distribuição '+a.runVersion+'</div>':'';
     return '<div class="service"><h3>'+esc(s.name)+'</h3><div class="meta">'+dt(s.starts_at)+'</div>'+state+seat+'<div class="row" style="margin-top:10px">'+actions+'</div></div>'
   }).join('')||'<div class="muted">Nenhum culto disponível.</div>'
 }
