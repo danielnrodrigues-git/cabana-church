@@ -284,6 +284,21 @@ select,input{width:100%;border:1px solid #cad4da;border-radius:12px;padding:11px
   <div class="modal-actions"><button class="btn" onclick="closeModal('mapSpecialModal')">Cancelar</button><button class="btn btn-primary" onclick="confirmMapSpecial()">Confirmar</button></div>
 </div></div>
 
+<div class="modal" id="seatManagementModal"><div class="modal-box">
+  <div class="modal-head"><div><h2 id="seatManagementTitle">Gerenciar assento</h2><div class="muted" id="seatManagementSubtitle"></div></div><button class="close" onclick="closeModal('seatManagementModal')">×</button></div>
+  <div class="admin-card" style="margin-top:4px">
+    <div class="muted" style="font-size:11px">Ocupante atual</div>
+    <div id="seatManagementName" style="font-weight:900;font-size:18px;margin-top:3px"></div>
+    <div id="seatManagementMeta" class="muted" style="margin-top:3px"></div>
+  </div>
+  <div class="modal-actions" style="justify-content:space-between;flex-wrap:wrap">
+    <button class="btn" onclick="closeModal('seatManagementModal')">Fechar</button>
+    <button class="btn" onclick="releaseManagedSeat()">Liberar assento</button>
+    <button class="btn btn-primary" onclick="changeManagedSeatLeader()">Trocar / Fixar liderança</button>
+  </div>
+  <div class="msg" id="seatManagementMsg"></div>
+</div></div>
+
 <div class="modal" id="backstageSeatChoiceModal"><div class="modal-box">
   <div class="modal-head"><div><h2>Reservar assento</h2><div class="muted" id="backstageSeatChoiceLabel"></div></div><button class="close" onclick="closeModal('backstageSeatChoiceModal')">×</button></div>
   <div class="form-row"><div class="muted">Como deseja utilizar esta poltrona?</div></div>
@@ -442,7 +457,7 @@ function renderMap(can){
   Array.prototype.forEach.call(svg.querySelectorAll('[data-seat-id]'),function(el){
     el.addEventListener('click',function(){handleSvgSeatClick(el.getAttribute('data-seat-id'));});
   });
-  document.getElementById('instruction').textContent=can?'Toque em um assento livre para reservar.':'As reservas deste culto estão encerradas.';
+  document.getElementById('instruction').textContent=backstageToken?'Toque em qualquer assento numerado para consultar ou gerenciar.':(can?'Toque em um assento livre para reservar.':'As reservas deste culto estão encerradas.');
 }
 
 function svgSideTableV44(x,y){
@@ -482,6 +497,7 @@ function svgSeatTitleV44(s){
 function isSvgSeatClickableV44(s){
   if(!s||s.state==='Bloqueado fixo')return false;
   if(backstageToken){
+    if(s.block==='Central'&&s.number)return true;
     if(s.occupied&&s.reservationId)return true;
     if(!s.occupied)return true;
   }
@@ -489,20 +505,45 @@ function isSvgSeatClickableV44(s){
 }
 function handleSvgSeatClick(id){
   var s=seatById(id); if(!s)return;
-  if(backstageToken&&s.occupied&&s.reservationId){
-    if(s.reservationType==='Liderança'||s.state==='Ocupado'){
-      selectedLeadershipReservation=s.reservationId;
-      systemConfirm('Cancelar a reserva de '+(s.displayName||'esta liderança')+' no Assento '+String(s.number||'').padStart(2,'0')+'?',{title:'Cancelar reserva de liderança',okText:'Cancelar reserva'}).then(function(ok){if(ok)cancelLeadershipReservationFromMap()});
-    }else{
-      systemConfirm('Cancelar esta Reserva Especial?',{title:'Cancelar Reserva Especial',okText:'Cancelar reserva'}).then(function(ok){if(ok)cancelMapSpecial(s.reservationId)});
+  if(backstageToken){
+    if(s.occupied){
+      if(s.reservationType==='Reserva Especial'){
+        systemConfirm('Cancelar esta Reserva Especial?',{title:'Cancelar Reserva Especial',okText:'Cancelar reserva'}).then(function(ok){if(ok)cancelMapSpecial(s.reservationId)});
+        return;
+      }
+      if(s.block==='Central'&&s.number){openSeatManagement(s);return;}
     }
-    return;
-  }
-  if(backstageToken&&!s.occupied){
-    if(s.block==='Central'&&s.number){openBackstageSeatChoice(s);return;}
-    openMapSpecial(s);return;
+    if(!s.occupied){
+      if(s.block==='Central'&&s.number){openReserve(s);return;}
+      openMapSpecial(s);return;
+    }
   }
   if(!s.occupied&&s.publicReservable&&s.state==='Livre'&&mapCanReserve){openReserve(s);return;}
+}
+function openSeatManagement(s){
+  selectedSeat=s.id;
+  document.getElementById('seatManagementTitle').textContent='Assento '+String(s.number||'').padStart(2,'0');
+  document.getElementById('seatManagementSubtitle').textContent=s.allocationId?'Distribuição automática':'Reserva manual';
+  document.getElementById('seatManagementName').textContent=s.displayName||'Liderança';
+  document.getElementById('seatManagementMeta').textContent=(s.title||'')+(s.reservationType?' · '+s.reservationType:'');
+  message('seatManagementMsg','');
+  show('seatManagementModal');
+}
+function releaseManagedSeat(){
+  var s=seatById(selectedSeat);if(!s||!currentService)return;
+  systemConfirm('Liberar o Assento '+String(s.number||'').padStart(2,'0')+' atualmente ocupado por '+(s.displayName||'esta liderança')+'?',{title:'Liberar assento',okText:'Liberar'}).then(function(ok){
+    if(!ok)return;
+    loading(true);
+    rpc('v6_backstage_manage_seat',{p_token:backstageToken,p_service_id:currentService,p_seat_id:s.id,p_action:'release',p_leader_legacy_id:null})
+      .then(function(r){if(!r.ok)throw new Error(r.message||'Não foi possível liberar o assento.');closeModal('seatManagementModal');return refreshAll()})
+      .catch(function(e){message('seatManagementMsg',e.message,true)})
+      .finally(function(){loading(false)});
+  });
+}
+function changeManagedSeatLeader(){
+  var s=seatById(selectedSeat);if(!s)return;
+  closeModal('seatManagementModal');
+  openReserve(s);
 }
 function openBackstageSeatChoice(s){
   selectedBackstageChoiceSeat=s.id;
@@ -603,7 +644,7 @@ function registerLeaderFromReservation(){
   message('registerMsg','');
   show('registerModal');
 }
-function confirmReserve(){var leader=document.getElementById('leaderSelectedId').value;if(!leader){message('reserveMsg','Selecione uma liderança da lista ou faça um novo cadastro.',true);filterLeaderAutocomplete();return}loading(true);var reserveCall=backstageToken?rpc('v5_backstage_reserve_leadership',{p_token:backstageToken,p_service_id:currentService,p_seat_id:selectedSeat,p_leader_id:leader,p_move_existing:false}):api('reserveLeadership',[{cultoId:currentService,seatId:selectedSeat,leaderId:leader,origin:'Próprio',moveExisting:false}]);reserveCall.then(function(r){if(r.ok){return api('getReservationList',[currentService,'']).then(function(v){var saved=(v.reservations||[]).some(function(x){return String(x.seatId)===String(selectedSeat)});if(!saved)throw new Error('A reserva não foi confirmada no banco. Tente novamente.');closeModal('reserveModal');return refreshAll()})}if(r.code==='ALREADY_RESERVED'){
+function confirmReserve(){var leader=document.getElementById('leaderSelectedId').value;if(!leader){message('reserveMsg','Selecione uma liderança da lista ou faça um novo cadastro.',true);filterLeaderAutocomplete();return}loading(true);var reserveCall=backstageToken?rpc('v6_backstage_manage_seat',{p_token:backstageToken,p_service_id:currentService,p_seat_id:selectedSeat,p_action:'assign',p_leader_legacy_id:leader}):api('reserveLeadership',[{cultoId:currentService,seatId:selectedSeat,leaderId:leader,origin:'Próprio',moveExisting:false}]);reserveCall.then(function(r){if(r.ok){return api('getReservationList',[currentService,'']).then(function(v){var saved=(v.reservations||[]).some(function(x){return String(x.seatId)===String(selectedSeat)});if(!saved)throw new Error('A reserva não foi confirmada no banco. Tente novamente.');closeModal('reserveModal');return refreshAll()})}if(!backstageToken&&r.code==='ALREADY_RESERVED'){
   return systemConfirm((r.message||'Você já possui uma reserva.')+' Deseja mover sua reserva para este assento?',{title:'Mover reserva',okText:'Mover reserva'}).then(function(ok){
     if(!ok)return;
     var moveCall=backstageToken?rpc('v5_backstage_reserve_leadership',{p_token:backstageToken,p_service_id:currentService,p_seat_id:selectedSeat,p_leader_id:leader,p_move_existing:true}):api('reserveLeadership',[{cultoId:currentService,seatId:selectedSeat,leaderId:leader,origin:'Próprio',moveExisting:true}]);return moveCall.then(function(x){if(!x.ok)throw new Error(x.message);return api('getReservationList',[currentService,'']).then(function(v){var saved=(v.reservations||[]).some(function(y){return String(y.seatId)===String(selectedSeat)});if(!saved)throw new Error('A alteração de assento não foi confirmada no banco. Tente novamente.');closeModal('reserveModal');return refreshAll()})});
