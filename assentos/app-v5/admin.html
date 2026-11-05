@@ -1082,7 +1082,20 @@ function shareMapAndList(){
   var target=document.getElementById('mapCard');
   if(!target||typeof html2canvas!=='function')return;
   loading(true);
-  html2canvas(target,{backgroundColor:'#ffffff',scale:2,useCORS:true}).then(function(canvas){
+
+  var shareTarget=target.cloneNode(true);
+  shareTarget.id='mapCardShareCapture';
+  shareTarget.style.position='fixed';
+  shareTarget.style.left='-10000px';
+  shareTarget.style.top='0';
+  shareTarget.style.width=target.getBoundingClientRect().width+'px';
+  var shareBar=shareTarget.querySelector('#mapShareBar');
+  if(shareBar)shareBar.remove();
+  var preview=shareTarget.querySelector('.preview-card');
+  if(preview)preview.remove();
+  document.body.appendChild(shareTarget);
+
+  html2canvas(shareTarget,{backgroundColor:'#ffffff',scale:2,useCORS:true}).then(function(canvas){
     return new Promise(function(resolve){canvas.toBlob(function(blob){resolve(blob)},'image/png')});
   }).then(function(blob){
     if(!blob)return;
@@ -1097,7 +1110,11 @@ function shareMapAndList(){
   }).catch(function(e){
     if(e&&e.name==='AbortError')return;
     console.error(e);
-  }).finally(function(){loading(false)});
+  }).finally(function(){
+    var capture=document.getElementById('mapCardShareCapture');
+    if(capture)capture.remove();
+    loading(false);
+  });
 }
 function shareMapImage(){
   var target=document.getElementById('mapCard');
