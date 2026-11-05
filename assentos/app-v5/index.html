@@ -139,6 +139,7 @@ main{width:min(480px,100%);padding:14px 10px 36px}
   main{box-shadow:0 0 0 1px rgba(0,0,0,.02)}
 }
 </style>
+<script src="https://unpkg.com/jspdf@4.2.1/dist/jspdf.umd.min.js"></script>
 </head>
 <body>
 
@@ -686,10 +687,79 @@ function renderAdmin(){
       ? '<div class="confirmed-names">'+confirmed.map(x=>{const l=leaderByUuid[x.leader_id];return '<div class="confirmed-person"><strong>'+esc(l?.displayName||'Liderança')+'</strong><span class="muted">'+esc(l?.title||'')+'</span></div>'}).join('')+'</div>'
       : '<div class="confirmed-empty">Nenhuma presença confirmada até o momento.</div>';
     const list='<div class="confirmed-list"><details><summary>Ver confirmados ('+c+')</summary>'+confirmedHtml+'</details></div>';
-    return '<div class="service"><h3>'+esc(s.name)+'</h3><div class="meta">'+dt(s.starts_at)+'</div><div class="row"><span class="pill '+(s.status==='Aberto'?'ok':s.status==='Fechado'?'bad':'')+'">'+esc(s.status)+'</span><span class="pill ok">'+c+' confirmados</span>'+(late?'<span class="pill bad">'+late+' cancelamento(s) tardio(s)</span>':'')+(latest?'<span class="pill">Distribuição '+latest.version+'</span>':'')+'</div>'+list+'<div class="row" style="margin-top:10px"><button class="btn '+(s.status==='Aberto'?'danger':'primary')+'" onclick="setServiceConfirmationStatus(\''+s.id+'\',\''+(s.status==='Aberto'?'Fechado':'Aberto')+'\')">'+(s.status==='Aberto'?'Fechar confirmações':'Liberar confirmações')+'</button><button class="btn primary" onclick="runAllocation(\''+s.id+'\')">'+(latest?'Refazer distribuição':'Fazer distribuição')+'</button><button class="btn" onclick="showAllocation(\''+s.id+'\')">Ver assentos</button></div></div>'
+    return '<div class="service"><h3>'+esc(s.name)+'</h3><div class="meta">'+dt(s.starts_at)+'</div><div class="row"><span class="pill '+(s.status==='Aberto'?'ok':s.status==='Fechado'?'bad':'')+'">'+esc(s.status)+'</span><span class="pill ok">'+c+' confirmados</span>'+(late?'<span class="pill bad">'+late+' cancelamento(s) tardio(s)</span>':'')+(latest?'<span class="pill">Distribuição '+latest.version+'</span>':'')+'</div>'+list+'<div class="row" style="margin-top:10px"><button class="btn '+(s.status==='Aberto'?'danger':'primary')+'" onclick="setServiceConfirmationStatus(\''+s.id+'\',\''+(s.status==='Aberto'?'Fechado':'Aberto')+'\')">'+(s.status==='Aberto'?'Fechar confirmações':'Liberar confirmações')+'</button><button class="btn primary" onclick="runAllocation(\''+s.id+'\')">'+(latest?'Refazer distribuição':'Fazer distribuição')+'</button><button class="btn" onclick="showAllocation(\''+s.id+'\')">Ver assentos</button><button class="btn" onclick="sharePreliminaryPresencePdf(\''+s.id+'\')">Lista preliminar de presença</button></div></div>'
   }).join('');
   qs('adminLeaders').innerHTML='<table class="admin-table"><thead><tr><th>Liderança</th><th>Vínculo Ministerial</th><th>Acesso</th><th></th></tr></thead><tbody>'+(adminData.leaders||[]).map(l=>'<tr><td><strong>'+esc(l.displayName)+'</strong><br><span class="muted">'+esc(l.title)+'</span></td><td><span class="pill '+((l.ministerialLink||'Não Reconhecido')==='Da Casa'?'ok':'')+'">'+esc(l.ministerialLink||'Não Reconhecido')+'</span></td><td>'+(l.accessEnabled?'<span class="pill ok">Ativado</span>':'<span class="pill">Não ativado</span>')+'</td><td><button class="btn small" onclick="openLeaderEdit(\''+l.id+'\')">Editar</button></td></tr>').join('')+'</tbody></table>';
 }
+async function sharePreliminaryPresencePdf(serviceId){
+  const s=(adminData.services||[]).find(x=>x.id===serviceId);
+  if(!s)return alert('Culto não encontrado.');
+  const leaderByUuid={};(adminData.leaders||[]).forEach(l=>leaderByUuid[l.uuid]=l);
+  const rows=(adminData.confirmations||[])
+    .filter(x=>x.service_id===serviceId&&x.status==='Confirmado')
+    .map(x=>leaderByUuid[x.leader_id])
+    .filter(Boolean)
+    .sort((a,b)=>String(a.displayName||'').localeCompare(String(b.displayName||''),'pt-BR'));
+  if(!rows.length)return alert('Ainda não há presenças confirmadas para este culto.');
+  if(!window.jspdf?.jsPDF)return alert('Não foi possível carregar o gerador de PDF. Verifique sua conexão e tente novamente.');
+
+  loading(true);
+  try{
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF({unit:'mm',format:'a4',orientation:'portrait'});
+    const pageW=210,pageH=297,margin=18;
+    const when=new Date(s.starts_at);
+    const dateText=when.toLocaleDateString('pt-BR');
+    const timeText=when.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    const generated=new Date().toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'});
+
+    function header(){
+      doc.setFont('helvetica','bold');doc.setFontSize(18);doc.text('CABANA CHURCH',pageW/2,20,{align:'center'});
+      doc.setFontSize(14);doc.text('Lista preliminar de presença',pageW/2,29,{align:'center'});
+      doc.setFont('helvetica','normal');doc.setFontSize(10);
+      doc.text((s.name||'Culto')+' - '+dateText+' - '+timeText,pageW/2,36,{align:'center'});
+      doc.setDrawColor(210);doc.line(margin,41,pageW-margin,41);
+    }
+    header();
+    let y=51;
+    doc.setFontSize(10);doc.setFont('helvetica','bold');
+    doc.text('Total de confirmados: '+rows.length,margin,y);
+    y+=9;
+
+    rows.forEach((l,idx)=>{
+      if(y>272){doc.addPage();header();y=51}
+      doc.setFont('helvetica','bold');doc.setFontSize(10);
+      doc.text(String(idx+1).padStart(2,'0')+'. '+String(l.displayName||'Liderança'),margin,y);
+      doc.setFont('helvetica','normal');
+      doc.text(String(l.title||''),pageW-margin,y,{align:'right'});
+      doc.setDrawColor(235);doc.line(margin,y+3,pageW-margin,y+3);
+      y+=8;
+    });
+
+    doc.setFont('helvetica','italic');doc.setFontSize(8);doc.setTextColor(110);
+    doc.text('Documento preliminar - sujeito a alterações até o encerramento das confirmações.',margin,pageH-14);
+    doc.text('Gerado em '+generated,pageW-margin,pageH-14,{align:'right'});
+
+    const safe=(s.name||'culto').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9]+/g,'-').replace(/^-|-$/g,'').toLowerCase();
+    const fileName='lista-preliminar-presenca-'+safe+'-'+dateText.replace(/\//g,'-')+'.pdf';
+    const blob=doc.output('blob');
+    const file=new File([blob],fileName,{type:'application/pdf'});
+
+    if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+      await navigator.share({
+        title:'Lista preliminar de presença',
+        text:(s.name||'Culto')+' - '+dateText+' '+timeText+' - '+rows.length+' confirmado(s).',
+        files:[file]
+      });
+    }else{
+      doc.save(fileName);
+      alert('O PDF foi gerado. Neste dispositivo, use o arquivo baixado para compartilhar pelo WhatsApp.');
+    }
+  }catch(e){
+    if(e?.name!=='AbortError')alert('Não foi possível gerar ou compartilhar o PDF: '+(e.message||e));
+  }finally{loading(false)}
+}
+
 async function setServiceConfirmationStatus(id,status){
   const verb=status==='Aberto'?'liberar as confirmações':'fechar as confirmações';
   if(!confirm('Deseja '+verb+' deste culto?'))return;
