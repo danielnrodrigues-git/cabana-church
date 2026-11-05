@@ -278,6 +278,17 @@ main{width:min(480px,100%);padding:14px 10px 36px}
     <label>Cônjuge</label>
     <select id="editSpouse"></select>
   </div>
+
+  <div style="margin-top:18px;padding-top:16px;border-top:1px solid #dfe6ea">
+    <div class="section-title" style="font-size:16px">Presença no culto</div>
+    <div class="field" style="margin-top:10px">
+      <label>Culto</label>
+      <select id="editPresenceService" onchange="renderBackstagePresenceStatus()"></select>
+    </div>
+    <div id="editPresenceStatus" class="muted" style="margin-top:10px"></div>
+    <div id="editPresenceActions" class="row" style="margin-top:10px"></div>
+  </div>
+
   <div class="row" style="margin-top:14px">
     <button class="btn primary" onclick="saveLeaderEdit()">Salvar alterações</button>
     <button class="btn danger" onclick="resetLeaderFromEdit()">Redefinir acesso</button>
@@ -718,9 +729,60 @@ function openLeaderEdit(id){
   }
   qs('editSpouse').innerHTML='<option value="">Sem vínculo</option>'+options.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.displayName)+' · '+esc(x.title||'')+'</option>').join('');
   qs('editSpouse').value=currentSpouseId;
+
+  const openServices=(adminData.services||[]).filter(s=>s.status==='Aberto'&&new Date(s.starts_at).getTime()>Date.now());
+  qs('editPresenceService').innerHTML=openServices.length
+    ? openServices.map(s=>'<option value="'+esc(s.id)+'">'+esc(serviceName(s))+'</option>').join('')
+    : '<option value="">Nenhum culto com confirmações abertas</option>';
+  qs('editPresenceService').disabled=!openServices.length;
   msg('leaderEditMsg','',false);
+  renderBackstagePresenceStatus();
   openModal('leaderEditModal');
 }
+function renderBackstagePresenceStatus(){
+  const leaderId=qs('editLeaderId').value;
+  const serviceId=qs('editPresenceService').value;
+  const l=(adminData.leaders||[]).find(x=>x.id===leaderId);
+  const statusEl=qs('editPresenceStatus'), actions=qs('editPresenceActions');
+  if(!l||!serviceId){
+    statusEl.textContent='Selecione um culto com confirmações abertas.';
+    actions.innerHTML='';
+    return;
+  }
+  const own=(adminData.confirmations||[]).find(x=>x.service_id===serviceId&&x.leader_id===l.uuid&&x.status==='Confirmado');
+  const couple=findCoupleForLeader(l.uuid);
+  let spouse=null,spouseConfirmed=false;
+  if(couple){
+    const spouseUuid=couple.leader_1_id===l.uuid?couple.leader_2_id:couple.leader_1_id;
+    spouse=(adminData.leaders||[]).find(x=>x.uuid===spouseUuid)||null;
+    spouseConfirmed=!!(adminData.confirmations||[]).find(x=>x.service_id===serviceId&&x.leader_id===spouseUuid&&x.status==='Confirmado');
+  }
+  if(own&&spouse&&spouseConfirmed) statusEl.textContent='Status: liderança e cônjuge confirmados.';
+  else if(own) statusEl.textContent='Status: presença confirmada'+(spouse?'; cônjuge ainda não confirmado.':'.');
+  else statusEl.textContent='Status: presença ainda não confirmada.';
+
+  let html='';
+  if(!own) html+='<button class="btn primary" onclick="adminConfirmLeaderPresence(false)">Confirmar presença</button>';
+  if(spouse&&(!own||!spouseConfirmed)) html+='<button class="btn primary" onclick="adminConfirmLeaderPresence(true)">Confirmar presença do casal</button>';
+  if(own&&(!spouse||spouseConfirmed)) html+='<span class="pill ok">Confirmado</span>';
+  actions.innerHTML=html;
+}
+async function adminConfirmLeaderPresence(includeSpouse){
+  const leaderId=qs('editLeaderId').value, serviceId=qs('editPresenceService').value;
+  if(!leaderId||!serviceId)return;
+  const l=(adminData.leaders||[]).find(x=>x.id===leaderId);
+  const label=includeSpouse?'o casal':(l?.displayName||'esta liderança');
+  if(!confirm('Confirmar a presença de '+label+' neste culto?'))return;
+  loading(true);
+  try{
+    const r=await api('adminConfirmPresence',[{token:backstageToken,leaderId,serviceId,includeSpouse}]);
+    if(!r.ok)return msg('leaderEditMsg',r.message||'Não foi possível confirmar a presença.',true);
+    await loadAdmin();
+    openLeaderEdit(leaderId);
+    msg('leaderEditMsg',r.message||'Presença confirmada.',false);
+  }catch(e){msg('leaderEditMsg',e.message,true)}finally{loading(false)}
+}
+
 async function saveLeaderEdit(){
   const leaderId=qs('editLeaderId').value;
   loading(true);
