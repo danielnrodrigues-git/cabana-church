@@ -269,6 +269,12 @@ main{width:min(480px,100%);padding:14px 10px 36px}
   <h2>Acesso Backstage</h2><p class="muted">Entre com seu PIN ou use o acesso biométrico já cadastrado.</p>
   <div class="field"><label>Usuário</label><select id="backstageUser" onchange="updateBackstageLoginState()"></select></div>
   <div id="backstagePinWrap" class="field hidden" style="margin-top:10px"><label>PIN</label><input id="backstagePin" type="password" inputmode="numeric" maxlength="6"></div>
+  <div id="backstageFirstAccessWrap" class="hidden" style="margin-top:12px">
+    <div class="field"><label>Código de primeiro acesso</label><input id="backstageFirstCode" autocomplete="one-time-code"></div>
+    <div class="field" style="margin-top:10px"><label>Crie seu PIN de 6 dígitos</label><input id="backstageFirstPin" type="password" inputmode="numeric" maxlength="6"></div>
+    <div class="field" style="margin-top:10px"><label>Confirme seu PIN</label><input id="backstageFirstPin2" type="password" inputmode="numeric" maxlength="6"></div>
+    <button class="btn primary" style="margin-top:12px;width:100%" onclick="activateBackstageFirstAccess()">Ativar meu acesso</button>
+  </div>
   <div class="row" style="margin-top:12px">
     <button id="backstageLoginBtn" class="btn primary hidden" onclick="smartBackstageLogin()">Entrar</button>
     <button id="backstageRetryBioBtn" class="btn hidden" onclick="biometricLogin('Backstage')">Tentar biometria novamente</button>
@@ -665,8 +671,10 @@ function updateBackstageLoginState(){
   const user=(bootstrap.backstageUsers||[]).find(x=>x.id===id);
   const selected=!!user;
   const hasPasskey=!!(user&&user.hasPasskey);
+  const setupRequired=!!(user&&user.setupRequired);
   qs('backstagePinWrap').classList.add('hidden');
-  qs('backstageLoginBtn').classList.toggle('hidden',!selected);
+  qs('backstageFirstAccessWrap').classList.toggle('hidden',!setupRequired);
+  qs('backstageLoginBtn').classList.toggle('hidden',!selected||setupRequired);
   qs('backstageRetryBioBtn').classList.add('hidden');
   qs('backstagePinLoginBtn').classList.add('hidden');
   qs('backstageLoginBtn').dataset.hasPasskey=hasPasskey?'1':'0';
