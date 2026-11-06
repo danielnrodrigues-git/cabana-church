@@ -137,6 +137,16 @@ main{width:min(480px,100%);padding:14px 10px 36px}
   .v5-header{width:min(480px,100%);margin:0 auto}
   main{box-shadow:0 0 0 1px rgba(0,0,0,.02)}
 }
+.monitor-status-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.monitor-status-left{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.monitor-status-action{margin-left:auto}
+.monitor-seat-btn{white-space:nowrap}
+@media(max-width:620px){
+  .monitor-status-row{flex-wrap:nowrap}
+  .monitor-status-left{min-width:0;flex:1}
+  .monitor-status-action{flex:0 0 auto}
+  .monitor-seat-btn{padding:9px 12px;font-size:12px}
+}
 </style>
 <script src="https://unpkg.com/jspdf@4.2.1/dist/jspdf.umd.min.js"></script>
 </head>
@@ -725,9 +735,9 @@ function renderAdmin(){
         : '<div class="confirmed-empty">Nenhum cancelamento registrado.</div>';
       const presence='<div class="confirmed-list"><details><summary>Lista preliminar de presença</summary><div style="margin-top:10px"><strong>Confirmados ('+confirmed.length+')</strong><div class="confirmed-names">'+confirmedHtml+'</div><div style="margin-top:12px"><strong>Cancelados ('+cancelled.length+')</strong></div><div class="confirmed-names">'+cancelledHtml+'</div></div></details></div>';
       const seatsBtn=latest
-        ? '<button class="btn" onclick="openSeatsForService(\''+s.id+'\',\''+esc(s.status||'')+'\')">Ver assentos</button>'
-        : '<button class="btn" onclick="showSeatAvailabilityMessage(\''+s.id+'\')">Ver assentos</button>';
-      return '<div class="service"><h3>'+esc(s.name)+'</h3><div class="meta">'+dt(s.starts_at)+'</div><div class="row"><span class="pill '+(s.status==='Aberto'?'ok':'')+'">'+esc(s.status)+'</span><span class="pill ok">'+confirmed.length+' confirmados</span>'+(cancelled.length?'<span class="pill">'+cancelled.length+' cancelado(s)</span>':'')+(late.length?'<span class="pill bad">'+late.length+' tardio(s)</span>':'')+(latest?'<span class="pill">Distribuição '+latest.version+'</span>':'')+'</div>'+presence+'<div class="row" style="margin-top:10px">'+seatsBtn+'</div></div>';
+        ? '<button class="btn monitor-seat-btn" onclick="openSeatsForService(\''+s.id+'\',\''+esc(s.status||'')+'\')">Ver assentos</button>'
+        : '<button class="btn monitor-seat-btn" onclick="showSeatAvailabilityMessage(\''+s.id+'\')">Ver assentos</button>';
+      return '<div class="service"><h3>'+esc(s.name)+'</h3><div class="meta">'+dt(s.starts_at)+'</div><div class="row monitor-status-row"><div class="row monitor-status-left"><span class="pill '+(s.status==='Aberto'?'ok':'')+'">'+esc(s.status)+'</span><span class="pill ok">'+confirmed.length+' confirmados</span>'+(cancelled.length?'<span class="pill">'+cancelled.length+' cancelado(s)</span>':'')+(late.length?'<span class="pill bad">'+late.length+' tardio(s)</span>':'')+(latest?'<span class="pill">Distribuição '+latest.version+'</span>':'')+'</div><div class="monitor-status-action">'+seatsBtn+'</div></div>'+presence+'</div>';
     }).join('');
     return;
   }
