@@ -341,6 +341,7 @@ header .brand, header .brand-lockup, header .brand-wrap{
 
 <script>
 if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js',{scope:'/'}).catch(function(){})}
+var READ_ONLY_SNAPSHOT=new URLSearchParams(location.search).get('readonly')==='1';
 var API='https://hqqsymgbepgzxydmgtmd.supabase.co/functions/v1/meu-assento-api';
 var SUPABASE_URL='https://hqqsymgbepgzxydmgtmd.supabase.co';
 var SUPABASE_KEY='sb_publishable_vihLcuNEo1C23w4awZP7zQ_aEjqbeZZ';
@@ -399,7 +400,7 @@ function loadService(){
       var a=x[0],b=x[1];if(!a.ok)throw new Error(a.message||'Culto indisponível');
       seats=a.seats||[];
       var c=a.service||{};
-      var canOperate=!['Finalizado','Arquivado','Excluído'].includes(c.status);
+      var canOperate=!READ_ONLY_SNAPSHOT&&!['Finalizado','Arquivado','Excluído'].includes(c.status);
       renderStatus(c,canOperate);
       renderMap(canOperate);
       renderReservations((b&&b.reservations)||[],false);
@@ -422,7 +423,7 @@ function serviceDayLabel(c){
   var names=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
   return names[new Date(y,mo-1,d,12,0,0).getDay()]||'';
 }
-function renderStatus(c,can){var e=document.getElementById('status');if(!c){e.innerHTML='';return}var day=serviceDayLabel(c);e.innerHTML='<span class="chip">'+(day?day+' • ':'')+c.date+' • '+c.time+'</span><span class="chip '+(can?'open':'closed')+'">'+(can?'Reservas abertas':'Reservas encerradas')+'</span>';renderAdminModeBar()}
+function renderStatus(c,can){var e=document.getElementById('status');if(!c){e.innerHTML='';return}var day=serviceDayLabel(c);e.innerHTML='<span class="chip">'+(day?day+' • ':'')+c.date+' • '+c.time+'</span><span class="chip '+(can?'open':'closed')+'">'+(READ_ONLY_SNAPSHOT?'Foto do culto':(can?'Reservas abertas':'Reservas encerradas'))+'</span>';var inst=document.getElementById('instruction');if(inst&&READ_ONLY_SNAPSHOT)inst.textContent='Visualização histórica — distribuição final deste culto.';renderAdminModeBar()}
 function clearMap(){var svg=document.getElementById('seatMap'),empty=document.getElementById('mapEmpty');if(svg){svg.innerHTML='';svg.style.display='none'}if(empty){empty.style.display='block';empty.textContent=backstageToken?'Selecione ou crie um culto para visualizar o mapa.':'Ainda não há culto com confirmações abertas.'}document.getElementById('reservations').innerHTML='<div class="empty">Nenhum culto disponível.</div>'}
 function seatById(id){return seats.find(function(x){return String(x.id)===String(id)})}
 function renderMap(can){
@@ -521,6 +522,7 @@ function svgSeatTitleV44(s){
   return s.stateLabel||s.state||'Assento';
 }
 function isSvgSeatClickableV44(s){
+  if(READ_ONLY_SNAPSHOT)return false;
   if(!s||s.state==='Bloqueado fixo')return false;
   if(backstageToken){
     if(s.block==='Central'&&s.number)return true;
@@ -1068,6 +1070,11 @@ function renderAdminModeBar(){
   var shareBar=document.getElementById('mapShareBar');
   var mainBtn=document.getElementById('backstageMainBtn');
   var autoCloseBox=document.getElementById('autoCloseBox');
+  if(READ_ONLY_SNAPSHOT){
+    if(autoCloseBox)autoCloseBox.style.display='none';
+    var toolbar=document.querySelector('.toolbar');
+    if(toolbar)toolbar.style.display='none';
+  }
   if(!backstageToken||!backstageUserInfo){
     bar.style.display='none';
     bar.innerHTML='';
@@ -1077,9 +1084,11 @@ function renderAdminModeBar(){
     return;
   }
   if(mainBtn)mainBtn.style.display='none';
-  if(autoCloseBox)autoCloseBox.style.display='block';
+  if(autoCloseBox)autoCloseBox.style.display=READ_ONLY_SNAPSHOT?'none':'block';
   bar.style.display='block';if(shareBar)shareBar.style.display='block';
-  bar.innerHTML='<div class="admin-mode"><div><strong>Modo '+escapeHtml(backstageUserInfo.profile)+'</strong><br><span>Usuário: '+escapeHtml(backstageUserInfo.name)+'</span></div><div class="admin-mode-actions"><button class="btn" onclick="openBackstage()">Painel</button><button class="btn" onclick="logoutBackstage()">Sair</button></div></div>';
+  bar.innerHTML=READ_ONLY_SNAPSHOT
+    ? '<div class="admin-mode"><div><strong>Foto histórica do culto</strong><br><span>Somente leitura</span></div><div class="admin-mode-actions"><button class="btn" onclick="logoutBackstage()">Sair</button></div></div>'
+    : '<div class="admin-mode"><div><strong>Modo '+escapeHtml(backstageUserInfo.profile)+'</strong><br><span>Usuário: '+escapeHtml(backstageUserInfo.name)+'</span></div><div class="admin-mode-actions"><button class="btn" onclick="openBackstage()">Painel</button><button class="btn" onclick="logoutBackstage()">Sair</button></div></div>';
 }
 function currentServiceLabel(){
   var s=document.getElementById('service');
