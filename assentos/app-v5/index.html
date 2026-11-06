@@ -216,10 +216,12 @@ main{width:min(480px,100%);padding:14px 10px 36px}
     </div>
     <div class="tabs">
       <button class="tab active" onclick="showAdminTab('services',this)">Cultos e distribuição</button>
+      <button class="tab" onclick="showAdminTab('closed',this)">Cultos encerrados</button>
       <button class="tab" onclick="showAdminTab('leaders',this)">Lideranças</button>
       <button class="tab" onclick="showAdminTab('couples',this)">Casais</button>
     </div>
     <div id="admin-services" class="card"><div class="section-title">Cultos</div><div id="adminServices"></div></div>
+    <div id="admin-closed" class="card hidden"><div class="section-title">Cultos encerrados</div><div id="adminClosedServices"></div></div>
     <div id="admin-leaders" class="card hidden"><div class="section-title">Lideranças</div><div id="adminLeaders" class="scroll"></div></div>
     <div id="admin-couples" class="card hidden">
       <div class="section-title">Vincular casal</div>
@@ -686,6 +688,22 @@ function renderAdmin(){
     const finished=['Finalizado','Fechado'].includes(String(s.status||''));
     return !(finished&&expired);
   });
+  const closedServices=(adminData.services||[]).filter(s=>{
+    const status=String(s.status||'');
+    const start=new Date(s.starts_at).getTime();
+    const expired=Date.now()>=start+3*60*60*1000;
+    return ['Finalizado','Fechado','Arquivado'].includes(status)&&expired;
+  }).sort((a,b)=>new Date(b.starts_at)-new Date(a.starts_at));
+
+  qs('adminClosedServices').innerHTML=closedServices.length
+    ? closedServices.map(s=>{
+        const confirmed=(adminData.confirmations||[]).filter(x=>x.service_id===s.id&&x.status==='Confirmado').length;
+        const late=(adminData.confirmations||[]).filter(x=>x.service_id===s.id&&x.status==='Cancelado'&&x.late_cancellation).length;
+        const latest=(adminData.runs||[]).find(x=>x.service_id===s.id&&x.status==='Concluída');
+        return '<div class="service"><h3>'+esc(s.name)+'</h3><div class="meta">'+dt(s.starts_at)+'</div><div class="row"><span class="pill bad">'+esc(s.status)+'</span><span class="pill">'+confirmed+' confirmado(s)</span>'+(late?'<span class="pill bad">'+late+' cancelamento(s) tardio(s)</span>':'')+(latest?'<span class="pill">Distribuição '+latest.version+'</span>':'')+'</div><div class="row" style="margin-top:10px"><button class="btn" onclick="openSeatsForService(\''+s.id+'\',\''+esc(s.status||'')+'\')">Ver assentos</button></div></div>';
+      }).join('')
+    : '<div class="confirmed-empty">Nenhum culto encerrado disponível no histórico.</div>';
+
   qs('adminServices').innerHTML=visibleServices.map(s=>{
     const confirmed=(adminData.confirmations||[]).filter(x=>x.service_id===s.id&&x.status==='Confirmado');
     const c=confirmed.length;
