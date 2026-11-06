@@ -71,6 +71,24 @@ header .brand, header .brand-lockup, header .brand-wrap{
   margin-right:auto!important;
 }
 .header-register,.header-register-btn,.header-register-icon-wrap,.header-register-label{display:none!important}
+.legacy-header-logout{
+  position:fixed;
+  right:14px;
+  top:calc(env(safe-area-inset-top,0px) + 14px);
+  z-index:10000;
+  min-width:86px;
+  height:46px;
+  padding:0 18px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.42);
+  background:rgba(255,255,255,.16);
+  color:#fff;
+  font-weight:900;
+  font-size:15px;
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  box-shadow:0 4px 14px rgba(0,0,0,.10);
+}
 </style>
 <script src="https://unpkg.com/jspdf@4.2.1/dist/jspdf.umd.min.js"></script>
 <script src="https://unpkg.com/jspdf-autotable@5.0.9/dist/jspdf.plugin.autotable.min.js"></script>
@@ -81,6 +99,7 @@ header .brand, header .brand-lockup, header .brand-wrap{
         <button id="legacyHomeBtn" class="legacy-nav-btn" onclick="legacyGoHome()" aria-label="Voltar ao Meu Assento" title="Voltar ao Meu Assento">⌂</button>
         <button id="legacyRefreshBtn" class="legacy-nav-btn" onclick="legacyRefresh()" aria-label="Atualizar" title="Atualizar">↻</button>
       </div>
+<button id="legacyHeaderLogoutBtn" class="legacy-header-logout" onclick="logoutBackstage()" aria-label="Sair" title="Sair">Sair</button>
 <header>
   <div class="brand"><div class="brand-lockup" aria-label="Cabana Church"><svg class="brand-mark" viewBox="0 0 120 42" aria-hidden="true"><path d="M18 27 L51 7 Q60 2 69 7 L102 27 Q106 30 102 35 Q99 39 94 36 L65 19 Q60 16 55 19 L35 31 H61 Q65 31 68 34 L72 38 H33 Q27 38 22 34 L18 31 Q15 29 18 27Z" fill="none" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg><div class="brand-name">CABANA</div><div class="brand-church">CHURCH</div></div></div>
   
@@ -91,7 +110,7 @@ header .brand, header .brand-lockup, header .brand-wrap{
     <div class="toolbar">
       <div class="field"><label>Culto</label><select id="service" onchange="loadService()"><option>Carregando...</option></select></div>
       <button class="btn" onclick="refreshAll()">Atualizar</button>
-      <button class="btn btn-dark" id="backstageMainBtn" onclick="openBackstage()">Backstage</button>
+      
     </div>
     <div class="auto-close-box" id="autoCloseBox" style="display:none">
       <div class="auto-close-head">
@@ -1039,7 +1058,12 @@ function cancelAdminReservation(id){
   }).catch(function(e){alert(e.message)}).finally(function(){loading(false)});
   });
 }
+function syncLegacyLogoutButton(){
+  var b=document.getElementById('legacyHeaderLogoutBtn');
+  if(b)b.style.display=(backstageToken&&backstageUserInfo)?'inline-flex':'none';
+}
 function renderAdminModeBar(){
+  syncLegacyLogoutButton();
   var bar=document.getElementById('adminModeBar');if(!bar)return;
   var shareBar=document.getElementById('mapShareBar');
   var mainBtn=document.getElementById('backstageMainBtn');
@@ -1177,6 +1201,7 @@ function openAdminDirectIfRequested(){
   return loadService();
 }
 window.addEventListener('load',function(){
+  syncLegacyLogoutButton();
   refreshAll().then(function(){
     return restoreBackstageSession();
   }).then(openAdminDirectIfRequested);
