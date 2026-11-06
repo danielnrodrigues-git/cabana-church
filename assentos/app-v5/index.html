@@ -680,6 +680,22 @@ function updateBackstageLoginState(){
   qs('backstageLoginBtn').dataset.hasPasskey=hasPasskey?'1':'0';
   msg('backstageMsg','',false);
 }
+async function activateBackstageFirstAccess(){
+  const id=qs('backstageUser').value;
+  const a=qs('backstageFirstPin').value,b=qs('backstageFirstPin2').value;
+  if(!/^\d{6}$/.test(a))return msg('backstageMsg','O PIN deve ter 6 dígitos.',true);
+  if(a!==b)return msg('backstageMsg','Os PINs não conferem.',true);
+  loading(true);
+  try{
+    const r=await api('firstAccessBackstage',[{userId:id,code:qs('backstageFirstCode').value,pin:a}]);
+    if(!r.ok)return msg('backstageMsg',r.message,true);
+    backstageToken=r.token;
+    localStorage.setItem('v6BackstageToken',backstageToken);
+    closeModal('backstageModal');
+    await init();
+    await loadAdmin();
+  }catch(e){msg('backstageMsg',e.message,true)}finally{loading(false)}
+}
 async function smartBackstageLogin(){
   const id=qs('backstageUser').value;
   const user=(bootstrap.backstageUsers||[]).find(x=>x.id===id);
