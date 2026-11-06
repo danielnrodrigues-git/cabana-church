@@ -681,8 +681,8 @@ async function loadAdmin(){
 function isMonitoringProfile(){return !!(adminData&&adminData.user&&adminData.user.profile==='Acompanhamento')}
 function configureBackstageExperience(){
   const monitor=isMonitoringProfile();
-  ['adminPanelBtn','firstAccessCodeBtn','tabClosed','tabLeaders','tabCouples'].forEach(id=>{const el=qs(id);if(el)el.classList.toggle('hidden',monitor)});
-  ['admin-closed','admin-leaders','admin-couples'].forEach(id=>{const el=qs(id);if(el&&monitor)el.classList.add('hidden')});
+  ['adminPanelBtn','firstAccessCodeBtn','tabLeaders','tabCouples'].forEach(id=>{const el=qs(id);if(el)el.classList.toggle('hidden',monitor)});
+  ['admin-leaders','admin-couples'].forEach(id=>{const el=qs(id);if(el&&monitor)el.classList.add('hidden')});
   const services=qs('admin-services');if(services)services.classList.remove('hidden');
   const tab=qs('tabServices');if(tab){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));tab.classList.add('active')}
 }
