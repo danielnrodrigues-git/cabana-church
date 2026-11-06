@@ -344,6 +344,8 @@ if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js',{scop
 var MONITOR_VIEW=new URLSearchParams(location.search).get('monitor')==='1';
 var READ_ONLY_SNAPSHOT=MONITOR_VIEW||new URLSearchParams(location.search).get('readonly')==='1';
 var API='https://hqqsymgbepgzxydmgtmd.supabase.co/functions/v1/meu-assento-api';
+var V6_API='https://hqqsymgbepgzxydmgtmd.supabase.co/functions/v1/meu-assento-v6-api';
+var v6BackstageToken=localStorage.getItem('v6BackstageToken')||'';
 var SUPABASE_URL='https://hqqsymgbepgzxydmgtmd.supabase.co';
 var SUPABASE_KEY='sb_publishable_vihLcuNEo1C23w4awZP7zQ_aEjqbeZZ';
 var bootstrap=null,currentService='',seats=[],mapCanReserve=false,selectedSeat='',selectedSpecialSeat='',selectedBackstageChoiceSeat='',selectedLeadershipReservation='',pendingSeatAfterRegistration='',backstageToken=localStorage.getItem('meuAssentoV5BackstageToken')||'',backstageUserInfo=null,backstageUsers=[],adminData={services:[],pastServices:[],leaders:[],users:[],audit:[],attendanceReports:{}},attendanceCurrentRows=[],weeklyAttendanceReport=null,monthlyAttendanceReport=null,closedNoticeServiceId='',systemConfirmResolver=null;
@@ -369,6 +371,7 @@ window.addEventListener('touchmove',function(e){
 window.addEventListener('touchend',function(){legacyPullActive=false;legacyPullDone=false},{passive:true});
 
 function api(method,args){return fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({method:method,args:args||[]})}).then(function(r){if(!r.ok)throw new Error('Falha de comunicação ('+r.status+')');return r.json();});}
+function v6api(method,args){return fetch(V6_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({method:method,args:args||[]})}).then(function(r){if(!r.ok)throw new Error('Falha de comunicação V6 ('+r.status+')');return r.json();});}
 function rpc(fn,body){return fetch(SUPABASE_URL+'/rest/v1/rpc/'+fn,{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY},body:JSON.stringify(body||{})}).then(function(r){if(!r.ok)throw new Error('Falha administrativa ('+r.status+')');return r.json();});}
 function loading(v){document.getElementById('loading').className=v?'loading show':'loading';}
 function show(id){document.getElementById(id).classList.add('show')} function closeModal(id){document.getElementById(id).classList.remove('show')}
@@ -404,7 +407,12 @@ function loadService(){
       var canOperate=!READ_ONLY_SNAPSHOT&&!['Finalizado','Arquivado','Excluído'].includes(c.status);
       renderStatus(c,canOperate);
       renderMap(canOperate);
-      renderReservations((b&&b.reservations)||[],MONITOR_VIEW);
+      if(MONITOR_VIEW&&v6BackstageToken){
+        return v6api('getAllocation',[{token:v6BackstageToken,serviceId:currentService}]).then(function(v){
+          renderMonitorAllocationList(v);
+        }).catch(function(){renderReservations((b&&b.reservations)||[],true)});
+      }
+      renderReservations((b&&b.reservations)||[],false);
     }).catch(function(e){alert(e.message)}).finally(function(){loading(false)});
   }
   return Promise.all([api('getSeats',[currentService,'']),api('getReservationList',[currentService,''])]).then(function(x){
@@ -698,6 +706,25 @@ function registerLeader(){var d={firstName:document.getElementById('firstName').
   });
 },500)}).catch(function(e){message('registerMsg',e.message,true)}).finally(function(){loading(false)})}
 function loadReservations(all){if(!currentService)return;loading(true);api('getReservationList',[currentService,'']).then(function(r){if(!r.ok)throw new Error(r.message);renderReservations(r.reservations||[],!!all)}).catch(function(e){alert(e.message)}).finally(function(){loading(false)})}
+function renderMonitorAllocationList(v){
+  configureMonitorSeatView();
+  var rows=[];
+  (v&&v.manualReservations||[]).forEach(function(x){
+    var n=Number(x.seats&&x.seats.seat_number||0);
+    if(n)rows.push({seat:n,name:x.reservation_type==='Reserva Especial'?(x.special_category||'Reserva Especial'):(x.display_name_snapshot||'Reservado'),title:x.title_snapshot||x.reservation_type||''});
+  });
+  (v&&v.allocations||[]).forEach(function(x){
+    var n=Number(x.seats&&x.seats.seat_number||0);
+    if(n)rows.push({seat:n,name:x.leaders&&x.leaders.display_name||'Liderança',title:x.leaders&&x.leaders.title||''});
+  });
+  var bySeat={};rows.forEach(function(r){bySeat[r.seat]=r});
+  rows=Object.keys(bySeat).map(function(k){return bySeat[k]}).sort(function(a,b){return a.seat-b.seat});
+  var box=document.getElementById('reservations');
+  if(!rows.length){box.innerHTML='<div class="empty">Ainda não há distribuição de assentos neste culto.</div>';return}
+  box.innerHTML=rows.map(function(r){
+    return '<div class="reservation-row"><div class="reservation-seat">'+String(r.seat)+'</div><div class="reservation-info"><strong>'+escapeHtml(r.name)+'</strong><div class="muted">'+escapeHtml(r.title||'')+'</div></div></div>';
+  }).join('');
+}
 function configureMonitorSeatView(){
   if(!MONITOR_VIEW)return;
   var share=document.getElementById('mapShareBar');if(share)share.style.display='none';
