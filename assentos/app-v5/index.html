@@ -336,6 +336,20 @@ main{width:min(480px,100%);padding:14px 10px 36px}
   <div id="codeMsg" class="msg"></div>
 </div></div>
 
+<div class="modal" id="seatAvailabilityModal"><div class="modal-box" style="max-width:420px">
+  <div class="modal-head">
+    <div>
+      <h2>Distribuição de assentos</h2>
+      <div class="muted">Acompanhamento do culto</div>
+    </div>
+    <button class="close" onclick="closeModal('seatAvailabilityModal')">×</button>
+  </div>
+  <div id="seatAvailabilityText" class="msg show" style="display:block;margin-top:8px"></div>
+  <div class="modal-actions">
+    <button class="btn btn-primary" onclick="closeModal('seatAvailabilityModal')">OK</button>
+  </div>
+</div></div>
+
 <div class="loading" id="loading">Atualizando Meu Assento...</div>
 
 <script>
@@ -945,11 +959,17 @@ async function resetLeaderFromEdit(){
 async function saveCouple(){loading(true);try{const r=await api('adminLinkCouple',[{token:backstageToken,leader1Id:qs('couple1').value,leader2Id:qs('couple2').value}]);msg('coupleMsg',r.message,!r.ok);if(r.ok)await loadAdmin()}catch(e){msg('coupleMsg',e.message,true)}finally{loading(false)}}
 function showSeatAvailabilityMessage(serviceId){
   const s=(adminData.services||[]).find(x=>x.id===serviceId);
-  if(!s)return alert('A distribuição dos assentos ainda não foi realizada.');
+  const box=qs('seatAvailabilityText');
+  if(!s){
+    box.textContent='A distribuição dos assentos ainda não foi realizada.';
+    openModal('seatAvailabilityModal');
+    return;
+  }
   const start=new Date(s.starts_at);
   const available=new Date(start.getTime()-60*60*1000);
   const time=available.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-  alert('A distribuição dos assentos ainda não foi realizada. Ela estará disponível a partir das '+time+'.');
+  box.textContent='A distribuição dos assentos ainda não foi realizada. Ela estará disponível a partir das '+time+'.';
+  openModal('seatAvailabilityModal');
 }
 async function openSeatsForService(serviceId,status){
   if(!backstageToken){alert('Sua sessão Backstage expirou. Entre novamente.');return}
