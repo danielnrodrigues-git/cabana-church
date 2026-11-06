@@ -695,7 +695,7 @@ function renderAdmin(){
       ? '<div class="confirmed-names">'+confirmed.map(x=>{const l=leaderByUuid[x.leader_id];return '<div class="confirmed-person"><strong>'+esc(l?.displayName||'Liderança')+'</strong><span class="muted">'+esc(l?.title||'')+'</span></div>'}).join('')+'</div>'
       : '<div class="confirmed-empty">Nenhuma presença confirmada até o momento.</div>';
     const list='<div class="confirmed-list"><details><summary>Ver confirmados ('+c+')</summary>'+confirmedHtml+'</details></div>';
-    return '<div class="service"><h3>'+esc(s.name)+'</h3><div class="meta">'+dt(s.starts_at)+'</div><div class="row"><span class="pill '+(s.status==='Aberto'?'ok':s.status==='Fechado'?'bad':'')+'">'+esc(s.status)+'</span><span class="pill ok">'+c+' confirmados</span>'+(late?'<span class="pill bad">'+late+' cancelamento(s) tardio(s)</span>':'')+(latest?'<span class="pill">Distribuição '+latest.version+'</span>':'')+'</div>'+list+'<div class="row" style="margin-top:10px"><button class="btn '+(s.status==='Aberto'?'danger':'primary')+'" onclick="setServiceConfirmationStatus(\''+s.id+'\',\''+(s.status==='Aberto'?'Fechado':'Aberto')+'\')">'+(s.status==='Aberto'?'Fechar confirmações':'Liberar confirmações')+'</button><button class="btn primary" onclick="runAllocation(\''+s.id+'\')">'+(latest?'Refazer distribuição':'Fazer distribuição')+'</button><button class="btn" onclick="showAllocation(\''+s.id+'\')">Ver assentos</button><button class="btn" onclick="sharePreliminaryPresencePdf(\''+s.id+'\')">Lista preliminar de presença</button></div></div>'
+    return '<div class="service"><h3>'+esc(s.name)+'</h3><div class="meta">'+dt(s.starts_at)+'</div><div class="row"><span class="pill '+(s.status==='Aberto'?'ok':s.status==='Fechado'?'bad':'')+'">'+esc(s.status)+'</span><span class="pill ok">'+c+' confirmados</span>'+(late?'<span class="pill bad">'+late+' cancelamento(s) tardio(s)</span>':'')+(latest?'<span class="pill">Distribuição '+latest.version+'</span>':'')+'</div>'+list+'<div class="row" style="margin-top:10px"><button class="btn '+(s.status==='Aberto'?'danger':'primary')+'" onclick="setServiceConfirmationStatus(\''+s.id+'\',\''+(s.status==='Aberto'?'Fechado':'Aberto')+'\')">'+(s.status==='Aberto'?'Fechar confirmações':'Liberar confirmações')+'</button><button class="btn primary" onclick="runAllocation(\''+s.id+'\')">'+(latest?'Refazer distribuição':'Fazer distribuição')+'</button><button class="btn" onclick="openLegacyAdmin(\''+s.id+'\')">Ver assentos</button><button class="btn" onclick="sharePreliminaryPresencePdf(\''+s.id+'\')">Lista preliminar de presença</button></div></div>'
   }).join('');
   qs('adminLeaders').innerHTML='<table class="admin-table"><thead><tr><th>Liderança</th><th>Vínculo Ministerial</th><th>Acesso</th><th></th></tr></thead><tbody>'+(adminData.leaders||[]).map(l=>'<tr><td><strong>'+esc(l.displayName)+'</strong><br><span class="muted">'+esc(l.title)+'</span></td><td><span class="pill '+((l.ministerialLink||'Não Reconhecido')==='Da Casa'?'ok':'')+'">'+esc(l.ministerialLink||'Não Reconhecido')+'</span></td><td>'+(l.accessEnabled?'<span class="pill ok">Ativado</span>':'<span class="pill">Não ativado</span>')+'</td><td><button class="btn small" onclick="openLeaderEdit(\''+l.id+'\')">Editar</button></td></tr>').join('')+'</tbody></table>';
 }
@@ -885,14 +885,16 @@ async function resetLeaderFromEdit(){
   }catch(e){msg('leaderEditMsg',e.message,true)}finally{loading(false)}
 }
 async function saveCouple(){loading(true);try{const r=await api('adminLinkCouple',[{token:backstageToken,leader1Id:qs('couple1').value,leader2Id:qs('couple2').value}]);msg('coupleMsg',r.message,!r.ok);if(r.ok)await loadAdmin()}catch(e){msg('coupleMsg',e.message,true)}finally{loading(false)}}
-async function openLegacyAdmin(){
+async function openLegacyAdmin(serviceId){
   if(!backstageToken){alert('Sua sessão Backstage expirou. Entre novamente.');return}
   loading(true);
   try{
     const r=await api('createLegacyAdminSession',[{token:backstageToken}]);
     if(!r.ok)return alert(r.message||'Não foi possível abrir a administração completa.');
     localStorage.setItem('meuAssentoV5BackstageToken',r.token);
-    location.href='./admin.html?admin=1';
+    const q=new URLSearchParams({admin:'1'});
+    if(serviceId)q.set('service',serviceId);
+    location.href='./admin.html?'+q.toString();
   }catch(e){alert(e.message||e)}finally{loading(false)}
 }
 function openCodeModal(){qs('newGlobalCode').value='';msg('codeMsg','',false);openModal('codeModal')}
