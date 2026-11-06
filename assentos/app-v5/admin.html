@@ -870,7 +870,13 @@ function loadAdminPanel(){
 }
 function renderBackstageMainServices(){
   var s=document.getElementById('service');if(!s)return;
-  var list=(adminData&&adminData.services)||[];
+  var active=(adminData&&adminData.services)||[];
+  var past=(adminData&&adminData.pastServices)||[];
+  var seen={};
+  var list=active.concat(past).filter(function(c){
+    if(!c||!c.id||seen[c.id])return false;
+    seen[c.id]=true;return true;
+  });
   if(!list.length)return;
   var requested=new URLSearchParams(location.search).get('service')||'';
   var prev=currentService||s.value||'';
