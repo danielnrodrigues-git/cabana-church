@@ -693,7 +693,7 @@ function renderAdmin(){
     const start=new Date(s.starts_at).getTime();
     const expired=Date.now()>=start+3*60*60*1000;
     return ['Finalizado','Fechado','Arquivado'].includes(status)&&expired;
-  }).sort((a,b)=>new Date(b.starts_at)-new Date(a.starts_at));
+  }).sort((a,b)=>new Date(b.starts_at)-new Date(a.starts_at)).slice(0,10);
 
   qs('adminClosedServices').innerHTML=closedServices.length
     ? closedServices.map(s=>{
