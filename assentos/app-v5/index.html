@@ -155,7 +155,7 @@ main{width:min(480px,100%);padding:14px 10px 36px}
     <div class="brand-church">CHURCH</div>
   </div>
   <div class="actions">
-    <button class="header-btn btn-backstage" onclick="openBackstageLogin()">Backstage</button>
+    <button class="header-btn btn-backstage" id="headerBackstageBtn" onclick="openBackstageLogin()">Backstage</button>
     <button class="header-btn hidden" id="logoutBtn" onclick="logoutAll()">Sair</button>
   </div>
 </header>
@@ -460,6 +460,7 @@ async function enablePushNotifications(ownerType='Leader'){
   }
 }
 async function init(){
+  syncBackstageHeaderActions();
   registerPushWorker();
   updateInstallCard();
   loading(true);
@@ -662,9 +663,16 @@ async function smartBackstageLogin(){
 }
 function openBackstageLogin(){updateBackstageLoginState();openModal('backstageModal')}
 async function loginBackstage(){loading(true);try{const r=await api('loginBackstage',[{userId:qs('backstageUser').value,pin:qs('backstagePin').value}]);if(!r.ok)return msg('backstageMsg',r.message,true);backstageToken=r.token;localStorage.setItem('v6BackstageToken',backstageToken);closeModal('backstageModal');await loadAdmin()}catch(e){msg('backstageMsg',e.message,true)}finally{loading(false)}}
+function syncBackstageHeaderActions(){
+  var headerBackstageBtn=document.getElementById('headerBackstageBtn');
+  var logoutBtn=document.getElementById('logoutBtn');
+  var active=!!(backstageToken&&adminData);
+  if(headerBackstageBtn)headerBackstageBtn.classList.toggle('hidden',active);
+  if(logoutBtn)logoutBtn.classList.toggle('hidden',!active);
+}
 async function loadAdmin(){
-  const r=await api('getAdminDashboard',[backstageToken]);if(!r.ok){backstageToken='';localStorage.removeItem('v6BackstageToken');return}
-  adminData=r;qs('publicView').classList.add('hidden');qs('leaderView').classList.add('hidden');qs('adminView').classList.remove('hidden');qs('logoutBtn').classList.remove('hidden');qs('adminWho').textContent='Logado como '+r.user.name+' · '+r.user.profile;qs('enableBackstagePasskeyBtn').classList.toggle('hidden',hasDevicePasskey('Backstage',r.user.id));syncPushUi('Backstage');renderAdmin();
+  const r=await api('getAdminDashboard',[backstageToken]);if(!r.ok){backstageToken='';localStorage.removeItem('v6BackstageToken');adminData=null;syncBackstageHeaderActions();return}
+  adminData=r;syncBackstageHeaderActions();qs('publicView').classList.add('hidden');qs('leaderView').classList.add('hidden');qs('adminView').classList.remove('hidden');qs('logoutBtn').classList.remove('hidden');qs('adminWho').textContent='Logado como '+r.user.name+' · '+r.user.profile;qs('enableBackstagePasskeyBtn').classList.toggle('hidden',hasDevicePasskey('Backstage',r.user.id));syncPushUi('Backstage');renderAdmin();
 }
 function showAdminTab(name,el){['services','leaders','couples'].forEach(x=>qs('admin-'+x).classList.toggle('hidden',x!==name));document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));el.classList.add('active')}
 function renderAdmin(){
