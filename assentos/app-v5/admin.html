@@ -872,6 +872,7 @@ function renderBackstageMainServices(){
   var s=document.getElementById('service');if(!s)return;
   var list=(adminData&&adminData.services)||[];
   if(!list.length)return;
+  var requested=new URLSearchParams(location.search).get('service')||'';
   var prev=currentService||s.value||'';
   s.innerHTML='';
   list.forEach(function(c){
@@ -879,7 +880,13 @@ function renderBackstageMainServices(){
     o.textContent=c.date+' • '+c.time+' • '+c.name+' ['+c.status+']';
     s.appendChild(o);
   });
-  if(list.some(function(c){return c.id===prev}))currentService=prev;else currentService=list[0].id;
+  if(requested&&list.some(function(c){return c.id===requested})){
+    currentService=requested;
+  }else if(list.some(function(c){return c.id===prev})){
+    currentService=prev;
+  }else{
+    currentService=list[0].id;
+  }
   s.value=currentService;
 }
 function formatLocalDateTime(v){
