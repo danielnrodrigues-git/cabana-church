@@ -210,15 +210,15 @@ main{width:min(480px,100%);padding:14px 10px 36px}
       <div class="row">
         <button id="enableBackstagePasskeyBtn" class="btn btn-backstage" onclick="enablePasskey('Backstage')">Ativar biometria neste dispositivo</button>
         <button id="enableBackstagePushBtn" class="btn btn-backstage" onclick="enablePushNotifications('Backstage')">Ativar notificações neste dispositivo</button>
-        <button class="btn btn-backstage" onclick="openLegacyAdmin()">Painel de administração</button>
-        <button class="btn btn-backstage" onclick="openCodeModal()">Código de primeiro acesso</button>
+        <button id="adminPanelBtn" class="btn btn-backstage" onclick="openLegacyAdmin()">Painel de administração</button>
+        <button id="firstAccessCodeBtn" class="btn btn-backstage" onclick="openCodeModal()">Código de primeiro acesso</button>
       </div>
     </div>
     <div class="tabs">
-      <button class="tab active" onclick="showAdminTab('services',this)">Cultos e distribuição</button>
-      <button class="tab" onclick="showAdminTab('closed',this)">Cultos encerrados</button>
-      <button class="tab" onclick="showAdminTab('leaders',this)">Lideranças</button>
-      <button class="tab" onclick="showAdminTab('couples',this)">Casais</button>
+      <button id="tabServices" class="tab active" onclick="showAdminTab('services',this)">Cultos e distribuição</button>
+      <button id="tabClosed" class="tab" onclick="showAdminTab('closed',this)">Cultos encerrados</button>
+      <button id="tabLeaders" class="tab" onclick="showAdminTab('leaders',this)">Lideranças</button>
+      <button id="tabCouples" class="tab" onclick="showAdminTab('couples',this)">Casais</button>
     </div>
     <div id="admin-services" class="card"><div class="section-title">Cultos</div><div id="adminServices"></div></div>
     <div id="admin-closed" class="card hidden"><div class="section-title">Cultos encerrados</div><div id="adminClosedServices"></div></div>
@@ -676,12 +676,21 @@ function syncBackstageHeaderActions(){
 }
 async function loadAdmin(){
   const r=await api('getAdminDashboard',[backstageToken]);if(!r.ok){backstageToken='';localStorage.removeItem('v6BackstageToken');adminData=null;syncBackstageHeaderActions();return}
-  adminData=r;syncBackstageHeaderActions();qs('publicView').classList.add('hidden');qs('leaderView').classList.add('hidden');qs('adminView').classList.remove('hidden');qs('logoutBtn').classList.remove('hidden');qs('adminWho').textContent='Logado como '+r.user.name+' · '+r.user.profile;qs('enableBackstagePasskeyBtn').classList.toggle('hidden',hasDevicePasskey('Backstage',r.user.id));syncPushUi('Backstage');renderAdmin();
+  adminData=r;syncBackstageHeaderActions();qs('publicView').classList.add('hidden');qs('leaderView').classList.add('hidden');qs('adminView').classList.remove('hidden');qs('logoutBtn').classList.remove('hidden');qs('adminWho').textContent='Logado como '+r.user.name+' · '+r.user.profile;qs('enableBackstagePasskeyBtn').classList.toggle('hidden',hasDevicePasskey('Backstage',r.user.id));syncPushUi('Backstage');configureBackstageExperience();renderAdmin();
+}
+function isMonitoringProfile(){return !!(adminData&&adminData.user&&adminData.user.profile==='Acompanhamento')}
+function configureBackstageExperience(){
+  const monitor=isMonitoringProfile();
+  ['adminPanelBtn','firstAccessCodeBtn','tabClosed','tabLeaders','tabCouples'].forEach(id=>{const el=qs(id);if(el)el.classList.toggle('hidden',monitor)});
+  ['admin-closed','admin-leaders','admin-couples'].forEach(id=>{const el=qs(id);if(el&&monitor)el.classList.add('hidden')});
+  const services=qs('admin-services');if(services)services.classList.remove('hidden');
+  const tab=qs('tabServices');if(tab){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));tab.classList.add('active')}
 }
 function showAdminTab(name,el){['services','closed','leaders','couples'].forEach(x=>qs('admin-'+x).classList.toggle('hidden',x!==name));document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));el.classList.add('active')}
 function renderAdmin(){
   const leaderByUuid={};
   (adminData.leaders||[]).forEach(l=>leaderByUuid[l.uuid]=l);
+  const monitor=isMonitoringProfile();
   const visibleServices=(adminData.services||[]).filter(s=>{
     const start=new Date(s.starts_at).getTime();
     const expired=Date.now()>=start+3*60*60*1000;
@@ -703,6 +712,25 @@ function renderAdmin(){
         return '<div class="service"><h3>'+esc(s.name)+'</h3><div class="meta">'+dt(s.starts_at)+'</div><div class="row"><span class="pill bad">'+esc(s.status)+'</span><span class="pill">'+confirmed+' confirmado(s)</span>'+(late?'<span class="pill bad">'+late+' cancelamento(s) tardio(s)</span>':'')+(latest?'<span class="pill">Distribuição '+latest.version+'</span>':'')+'</div><div class="row" style="margin-top:10px"><button class="btn" onclick="openSeatsForService(\''+s.id+'\',\''+esc(s.status||'')+'\')">Ver assentos</button></div></div>';
       }).join('')
     : '<div class="confirmed-empty">Nenhum culto encerrado disponível no histórico.</div>';
+
+  if(monitor){
+    qs('adminServices').innerHTML=visibleServices.map(s=>{
+      const confirmed=(adminData.confirmations||[]).filter(x=>x.service_id===s.id&&x.status==='Confirmado');
+      const cancelled=(adminData.confirmations||[]).filter(x=>x.service_id===s.id&&x.status==='Cancelado');
+      const late=cancelled.filter(x=>x.late_cancellation);
+      const latest=(adminData.runs||[]).find(x=>x.service_id===s.id&&x.status==='Concluída');
+      const confirmedHtml=confirmed.length
+        ? confirmed.map(x=>{const l=leaderByUuid[x.leader_id];return '<div class="confirmed-person"><strong>'+esc(l?.displayName||'Liderança')+'</strong><span class="muted">'+esc(l?.title||'')+'</span></div>'}).join('')
+        : '<div class="confirmed-empty">Nenhuma presença confirmada até o momento.</div>';
+      const cancelledHtml=cancelled.length
+        ? cancelled.map(x=>{const l=leaderByUuid[x.leader_id];return '<div class="confirmed-person"><strong>'+esc(l?.displayName||'Liderança')+'</strong><span class="'+(x.late_cancellation?'pill bad':'muted')+'">'+(x.late_cancellation?'Cancelamento tardio':'Cancelado')+'</span></div>'}).join('')
+        : '<div class="confirmed-empty">Nenhum cancelamento registrado.</div>';
+      const presence='<div class="confirmed-list"><details><summary>Lista preliminar de presença</summary><div style="margin-top:10px"><strong>Confirmados ('+confirmed.length+')</strong><div class="confirmed-names">'+confirmedHtml+'</div><div style="margin-top:12px"><strong>Cancelados ('+cancelled.length+')</strong></div><div class="confirmed-names">'+cancelledHtml+'</div></div></details></div>';
+      const seatsBtn=latest?'<button class="btn" onclick="openSeatsForService(\''+s.id+'\',\''+esc(s.status||'')+'\')">Ver assentos</button>':'';
+      return '<div class="service"><h3>'+esc(s.name)+'</h3><div class="meta">'+dt(s.starts_at)+'</div><div class="row"><span class="pill '+(s.status==='Aberto'?'ok':'')+'">'+esc(s.status)+'</span><span class="pill ok">'+confirmed.length+' confirmados</span>'+(cancelled.length?'<span class="pill">'+cancelled.length+' cancelado(s)</span>':'')+(late.length?'<span class="pill bad">'+late.length+' tardio(s)</span>':'')+(latest?'<span class="pill">Distribuição '+latest.version+'</span>':'')+'</div>'+presence+(seatsBtn?'<div class="row" style="margin-top:10px">'+seatsBtn+'</div>':'')+'</div>';
+    }).join('');
+    return;
+  }
 
   qs('adminServices').innerHTML=visibleServices.map(s=>{
     const confirmed=(adminData.confirmations||[]).filter(x=>x.service_id===s.id&&x.status==='Confirmado');
@@ -907,11 +935,14 @@ async function openSeatsForService(serviceId,status){
   if(!backstageToken){alert('Sua sessão Backstage expirou. Entre novamente.');return}
   loading(true);
   try{
-    const r=await api('createLegacyAdminSession',[{token:backstageToken}]);
+    const monitor=isMonitoringProfile();
+    const readonly=monitor||['Fechado','Finalizado','Arquivado'].includes(String(status||''));
+    const r=await api('createLegacyAdminSession',[{token:backstageToken,readonly}]);
     if(!r.ok)return alert(r.message||'Não foi possível abrir os assentos deste culto.');
     localStorage.setItem('meuAssentoV5BackstageToken',r.token);
     const q=new URLSearchParams({admin:'1',service:serviceId});
-    if(['Fechado','Finalizado','Arquivado'].includes(String(status||'')))q.set('readonly','1');
+    if(readonly)q.set('readonly','1');
+    if(monitor)q.set('monitor','1');
     location.href='./admin.html?'+q.toString();
   }catch(e){alert(e.message||e)}finally{loading(false)}
 }
