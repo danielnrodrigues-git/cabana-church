@@ -356,6 +356,21 @@ function legacyGoBack(){
   if(history.length>1){history.back();return}
   legacyGoHome();
 }
+function syncLegacyNavigationButtons(){
+  var b=document.getElementById('legacyRefreshBtn');
+  if(!b)return;
+  if(MONITOR_VIEW){
+    b.setAttribute('onclick','legacyGoBack()');
+    b.setAttribute('aria-label','Voltar');
+    b.setAttribute('title','Voltar');
+    b.textContent='‹';
+  }else{
+    b.setAttribute('onclick','legacyRefresh()');
+    b.setAttribute('aria-label','Atualizar');
+    b.setAttribute('title','Atualizar');
+    b.textContent='↻';
+  }
+}
 function legacyRefresh(){
   var b=document.getElementById('legacyRefreshBtn');if(b)b.disabled=true;
   Promise.resolve(refreshAll()).finally(function(){if(b)b.disabled=false});
@@ -1249,6 +1264,7 @@ function openAdminDirectIfRequested(){
 }
 window.addEventListener('load',function(){
   syncLegacyLogoutButton();
+  syncLegacyNavigationButtons();
   if(MONITOR_VIEW){
     var toolbar=document.querySelector('.toolbar');if(toolbar)toolbar.style.display='none';
     var autoClose=document.getElementById('autoCloseBox');if(autoClose)autoClose.style.display='none';
