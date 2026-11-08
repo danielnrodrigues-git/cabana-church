@@ -427,7 +427,7 @@ function loadService(){
           renderMonitorAllocationList(v);
         }).catch(function(){renderReservations((b&&b.reservations)||[],true)});
       }
-      renderReservations((b&&b.reservations)||[],false);
+      renderSeatAssignmentList(false);
     }).catch(function(e){alert(e.message)}).finally(function(){loading(false)});
   }
   return Promise.all([api('getSeats',[currentService,'']),api('getReservationList',[currentService,''])]).then(function(x){
@@ -720,7 +720,15 @@ function registerLeader(){var d={firstName:document.getElementById('firstName').
     }
   });
 },500)}).catch(function(e){message('registerMsg',e.message,true)}).finally(function(){loading(false)})}
-function loadReservations(all){if(!currentService)return;loading(true);api('getReservationList',[currentService,'']).then(function(r){if(!r.ok)throw new Error(r.message);renderReservations(r.reservations||[],!!all)}).catch(function(e){alert(e.message)}).finally(function(){loading(false)})}
+function loadReservations(all){
+  if(!currentService)return;
+  if(backstageToken){renderSeatAssignmentList(!!all);return}
+  loading(true);
+  api('getReservationList',[currentService,'']).then(function(r){
+    if(!r.ok)throw new Error(r.message);
+    renderReservations(r.reservations||[],!!all);
+  }).catch(function(e){alert(e.message)}).finally(function(){loading(false)})
+}
 function renderMonitorAllocationList(v){
   configureMonitorSeatView();
   var rows=[];
@@ -748,6 +756,46 @@ function configureMonitorSeatView(){
     var strong=head.querySelector('strong');if(strong)strong.textContent='Distribuição dos assentos';
     var link=head.querySelector('.link-btn');if(link)link.style.display='none';
   }
+}
+function renderSeatAssignmentList(all){
+  var box=document.getElementById('reservations');
+  var head=document.querySelector('.preview-head');
+  if(head){
+    var strong=head.querySelector('strong');if(strong)strong.textContent='Assentos deste culto';
+    var link=head.querySelector('.link-btn');
+    if(link){
+      link.style.display='inline-block';
+      link.textContent=all?'Ver menos':'Ver todos';
+      link.setAttribute('onclick','loadReservations('+(all?'false':'true')+')');
+    }
+  }
+
+  var rows=(seats||[])
+    .filter(function(s){
+      return s&&s.block==='Central'&&s.number&&s.occupied;
+    })
+    .map(function(s){
+      return {
+        seat:Number(s.number),
+        name:s.displayName||s.stateLabel||'Reservado',
+        title:s.title||s.reservationType||''
+      };
+    })
+    .sort(function(a,b){return a.seat-b.seat});
+
+  if(!rows.length){
+    box.innerHTML='<div class="empty">A distribuição deste culto ainda não foi realizada.</div>';
+    return;
+  }
+
+  var arr=all?rows:rows.slice(0,8);
+  box.innerHTML=arr.map(function(r){
+    return '<div class="reservation-row">'+
+      '<div class="reservation-seat">'+String(r.seat).padStart(2,'0')+'</div>'+
+      '<div class="reservation-info"><strong>'+escapeHtml(r.name)+'</strong>'+
+      (r.title?'<div class="muted">'+escapeHtml(r.title)+'</div>':'')+
+      '</div></div>';
+  }).join('');
 }
 function renderReservations(list,all){
   var box=document.getElementById('reservations');
