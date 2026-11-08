@@ -1195,24 +1195,45 @@ function shareMapAndList(){
   shareTarget.style.left='-10000px';
   shareTarget.style.top='0';
   shareTarget.style.width=target.getBoundingClientRect().width+'px';
+  shareTarget.style.background='#ffffff';
   var shareBar=shareTarget.querySelector('#mapShareBar');
   if(shareBar)shareBar.remove();
   var preview=shareTarget.querySelector('.preview-card');
   if(preview)preview.remove();
+
+  var text=buildReservationShareText();
+  var listBlock=document.createElement('div');
+  listBlock.id='mapShareReservationList';
+  listBlock.style.margin='18px 0 4px';
+  listBlock.style.padding='16px 18px';
+  listBlock.style.border='1px solid #d9d9d9';
+  listBlock.style.borderRadius='12px';
+  listBlock.style.background='#ffffff';
+  listBlock.style.color='#111111';
+  listBlock.style.fontFamily='Arial, sans-serif';
+  listBlock.style.fontSize='14px';
+  listBlock.style.lineHeight='1.45';
+  listBlock.style.whiteSpace='pre-wrap';
+  listBlock.style.wordBreak='break-word';
+  listBlock.textContent=text.replace(/\*/g,'');
+  shareTarget.appendChild(listBlock);
+
   document.body.appendChild(shareTarget);
 
-  html2canvas(shareTarget,{backgroundColor:'#ffffff',scale:2,useCORS:true}).then(function(canvas){
+  html2canvas(shareTarget,{backgroundColor:'#ffffff',scale:2,useCORS:true,windowWidth:shareTarget.scrollWidth,windowHeight:shareTarget.scrollHeight}).then(function(canvas){
     return new Promise(function(resolve){canvas.toBlob(function(blob){resolve(blob)},'image/png')});
   }).then(function(blob){
     if(!blob)return;
-    var file=new File([blob],'meu-assento-mapa.png',{type:'image/png'});
-    var text=buildReservationShareText();
+    var file=new File([blob],'meu-assento-mapa-lista.png',{type:'image/png'});
     if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
-      return navigator.share({title:'Meu Assento',text:text,files:[file]});
+      return navigator.share({title:'Meu Assento - Mapa + Lista',files:[file]});
     }
-    window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank','noopener');
-    var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='meu-assento-mapa.png';a.click();setTimeout(function(){URL.revokeObjectURL(a.href)},1000);
-    return systemConfirm('Seu navegador não permite enviar imagem e texto juntos automaticamente. Abri a lista no WhatsApp e salvei o mapa em PNG para anexar na mesma conversa.',{title:'Compartilhamento preparado',okText:'OK',cancelText:'Fechar'});
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='meu-assento-mapa-lista.png';
+    a.click();
+    setTimeout(function(){URL.revokeObjectURL(a.href)},1000);
+    return systemConfirm('O mapa e a lista foram gerados juntos em uma única imagem. Abra o arquivo salvo e compartilhe pelo WhatsApp.',{title:'Mapa + lista gerados',okText:'OK',cancelText:'Fechar'});
   }).catch(function(e){
     if(e&&e.name==='AbortError')return;
     console.error(e);
