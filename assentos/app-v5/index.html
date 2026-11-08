@@ -342,6 +342,20 @@ main{width:min(480px,100%);padding:14px 10px 36px}
   <div id="codeMsg" class="msg"></div>
 </div></div>
 
+<div class="modal" id="preliminaryPresenceModal"><div class="modal-box" style="max-width:520px">
+  <div class="modal-head">
+    <div>
+      <h2>Lista preliminar de presença</h2>
+      <div class="muted" id="preliminaryPresenceSubtitle"></div>
+    </div>
+    <button class="close" onclick="closeModal('preliminaryPresenceModal')">×</button>
+  </div>
+  <div id="preliminaryPresenceRows" style="margin-top:12px"></div>
+  <div class="modal-actions">
+    <button class="btn btn-primary" onclick="closeModal('preliminaryPresenceModal')">Fechar</button>
+  </div>
+</div></div>
+
 <div class="modal" id="seatAvailabilityModal"><div class="modal-box" style="max-width:420px">
   <div class="modal-head">
     <div>
@@ -797,6 +811,23 @@ function renderAdmin(){
   const monitoringRows=(adminData.monitoringUsers||[]).map(u=>'<tr><td><strong>'+esc(u.name)+'</strong><br><span class="muted">Acompanhamento</span></td><td><span class="pill">Monitoração</span></td><td>'+(u.setupRequired?'<span class="pill">Primeiro acesso pendente</span>':'<span class="pill ok">Acesso ativado</span>')+(u.hasPasskey?'<br><span class="pill ok" style="margin-top:4px">Biometria ativa</span>':'')+(u.hasPush?'<br><span class="pill ok" style="margin-top:4px">Notificações ativas</span>':'')+'</td><td></td></tr>');
   qs('adminLeaders').innerHTML='<table class="admin-table"><thead><tr><th>Liderança</th><th>Vínculo Ministerial</th><th>Acesso</th><th></th></tr></thead><tbody>'+leadershipRows.concat(monitoringRows).join('')+'</tbody></table>';
 }
+function openPreliminaryPresenceModal(serviceId){
+  if(!adminData)return;
+  const s=(adminData.services||[]).find(x=>x.id===serviceId);
+  const rows=(adminData.confirmations||[])
+    .filter(x=>x.service_id===serviceId&&x.status==='Confirmado')
+    .map(x=>{
+      const l=(adminData.leaders||[]).find(y=>y.id===x.leader_id||y.uuid===x.leader_id);
+      return l?{name:l.displayName||l.display_name||'',title:l.title||''}:{name:'Liderança',title:''};
+    })
+    .sort((a,b)=>a.name.localeCompare(b.name,'pt-BR'));
+  qs('preliminaryPresenceSubtitle').textContent=(s?s.name:'Culto')+' • '+rows.length+' confirmado(s)';
+  qs('preliminaryPresenceRows').innerHTML=rows.length
+    ? rows.map((r,i)=>'<div class="service" style="margin-bottom:8px"><div class="row" style="justify-content:flex-start;align-items:center"><span class="pill">'+(i+1)+'</span><div><strong>'+esc(r.name)+'</strong>'+(r.title?'<div class="muted">'+esc(r.title)+'</div>':'')+'</div></div></div>').join('')
+    : '<div class="muted">Nenhuma presença confirmada até o momento.</div>';
+  openModal('preliminaryPresenceModal');
+}
+
 async function sharePreliminaryPresencePdf(serviceId){
   const s=(adminData.services||[]).find(x=>x.id===serviceId);
   if(!s)return alert('Culto não encontrado.');
