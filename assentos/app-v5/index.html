@@ -1098,7 +1098,7 @@ async function openSeatsForService(serviceId,status){
   loading(true);
   try{
     const monitor=isMonitoringProfile();
-    const readonly=monitor||['Fechado','Finalizado','Arquivado'].includes(String(status||''));
+    const readonly=monitor||['Finalizado','Arquivado'].includes(String(status||''));
     const r=await api('createLegacyAdminSession',[{token:backstageToken,readonly}]);
     if(!r.ok)return alert(r.message||'Não foi possível abrir os assentos deste culto.');
     localStorage.setItem('meuAssentoV5BackstageToken',r.token);
