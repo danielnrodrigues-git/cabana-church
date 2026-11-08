@@ -350,7 +350,7 @@ main{width:min(480px,100%);padding:14px 10px 36px}
     </div>
     <button class="close" onclick="closeModal('preliminaryPresenceModal')">×</button>
   </div>
-  <div id="preliminaryPresenceRows" style="margin-top:12px"></div>
+  <div id="preliminaryPresenceRows" class="prelim-list-scroll" style="margin-top:12px"></div>
   <div class="modal-actions">
     <button class="btn btn-primary" onclick="closeModal('preliminaryPresenceModal')">Fechar</button>
   </div>
@@ -823,7 +823,7 @@ function openPreliminaryPresenceModal(serviceId){
     .sort((a,b)=>a.name.localeCompare(b.name,'pt-BR'));
   qs('preliminaryPresenceSubtitle').textContent=(s?s.name:'Culto')+' • '+rows.length+' confirmado(s)';
   qs('preliminaryPresenceRows').innerHTML=rows.length
-    ? rows.map((r,i)=>'<div class="service" style="margin-bottom:8px"><div class="row" style="justify-content:flex-start;align-items:center"><span class="pill">'+(i+1)+'</span><div><strong>'+esc(r.name)+'</strong>'+(r.title?'<div class="muted">'+esc(r.title)+'</div>':'')+'</div></div></div>').join('')
+    ? rows.map((r,i)=>'<div class="prelim-row"><div class="prelim-num">'+(i+1)+'</div><div class="prelim-person"><strong>'+esc(r.name)+'</strong>'+(r.title?'<div class="muted">'+esc(r.title)+'</div>':'')+'</div></div>').join('')
     : '<div class="muted">Nenhuma presença confirmada até o momento.</div>';
   openModal('preliminaryPresenceModal');
 }
