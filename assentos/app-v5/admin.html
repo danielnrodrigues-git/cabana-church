@@ -566,7 +566,7 @@ function handleSvgSeatClick(id){
       if(s.block==='Central'&&s.number){openSeatManagement(s);return;}
     }
     if(!s.occupied){
-      if(s.block==='Central'&&s.number){openReserve(s);return;}
+      if(s.block==='Central'&&s.number){openBackstageSeatChoice(s);return;}
       openMapSpecial(s);return;
     }
   }
