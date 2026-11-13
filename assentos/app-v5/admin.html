@@ -1232,6 +1232,23 @@ function shareReservationListWhatsApp(){
   if(!currentService)return;
   window.open('https://wa.me/?text='+encodeURIComponent(buildReservationShareText()),'_blank','noopener');
 }
+function copyShareTextFallback(text){
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      return navigator.clipboard.writeText(text).then(function(){return true}).catch(function(){return legacyCopyShareText(text)});
+    }
+  }catch(e){}
+  return Promise.resolve(legacyCopyShareText(text));
+}
+function legacyCopyShareText(text){
+  try{
+    var ta=document.createElement('textarea');
+    ta.value=text;ta.setAttribute('readonly','');
+    ta.style.position='fixed';ta.style.opacity='0';ta.style.pointerEvents='none';
+    document.body.appendChild(ta);ta.focus();ta.select();
+    var ok=document.execCommand('copy');document.body.removeChild(ta);return !!ok;
+  }catch(e){return false}
+}
 function shareMapAndList(){
   var target=document.getElementById('mapCard');
   if(!target||typeof html2canvas!=='function')return;
@@ -1255,12 +1272,18 @@ function shareMapAndList(){
     if(!blob)return;
     var file=new File([blob],'meu-assento-mapa.png',{type:'image/png'});
     var text=buildReservationShareText();
-    if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
-      return navigator.share({title:'Meu Assento',text:text,files:[file]});
-    }
-    window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank','noopener');
-    var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='meu-assento-mapa.png';a.click();setTimeout(function(){URL.revokeObjectURL(a.href)},1000);
-    return systemConfirm('Seu navegador não permite enviar imagem e texto juntos automaticamente. Abri a lista no WhatsApp e salvei o mapa em PNG para anexar na mesma conversa.',{title:'Compartilhamento preparado',okText:'OK',cancelText:'Fechar'});
+    return copyShareTextFallback(text).then(function(copied){
+      if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+        return navigator.share({title:'Meu Assento',text:text,files:[file]}).then(function(){
+          if(copied){
+            return systemConfirm('Layout compartilhado. A lista também foi copiada para a área de transferência. Se o WhatsApp deste aparelho não inserir o texto automaticamente, basta colar a lista na mensagem.',{title:'Layout + lista',okText:'OK',cancelText:'Fechar'});
+          }
+        });
+      }
+      window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank','noopener');
+      var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='meu-assento-mapa.png';a.click();setTimeout(function(){URL.revokeObjectURL(a.href)},1000);
+      return systemConfirm(copied?'Abri a lista no WhatsApp, salvei o mapa em PNG e também copiei a lista. Anexe o mapa e, se necessário, cole o texto na mesma conversa.':'Abri a lista no WhatsApp e salvei o mapa em PNG para anexar na mesma conversa.',{title:'Compartilhamento preparado',okText:'OK',cancelText:'Fechar'});
+    });
   }).catch(function(e){
     if(e&&e.name==='AbortError')return;
     console.error(e);
