@@ -1273,11 +1273,52 @@ function showShareToast(text){
   document.body.appendChild(el);
   setTimeout(function(){if(el&&el.parentNode)el.remove()},5500);
 }
-function isIOSShareEnvironment(){
-  var ua=navigator.userAgent||'';
-  var ios=/iPad|iPhone|iPod/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-  var standalone=window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches;
-  return !!(ios||standalone);
+var pendingShareMapFile=null,pendingShareMapBlobUrl='',pendingShareListText='';
+function closeMapListShareModal(){
+  var m=document.getElementById('mapListShareModal');
+  if(m)m.remove();
+  if(pendingShareMapBlobUrl){try{URL.revokeObjectURL(pendingShareMapBlobUrl)}catch(e){}}
+  pendingShareMapFile=null;pendingShareMapBlobUrl='';pendingShareListText='';
+}
+function ensureMapListShareModal(){
+  var old=document.getElementById('mapListShareModal');
+  if(old)old.remove();
+  var wrap=document.createElement('div');
+  wrap.id='mapListShareModal';
+  wrap.className='modal show';
+  wrap.innerHTML=
+    '<div class="modal-box" style="max-width:520px">'+
+      '<div class="modal-head"><div><h2>Layout + lista</h2><div class="muted">Os dois conteúdos estão prontos. Envie os dois para a mesma conversa no WhatsApp.</div></div><button class="close" onclick="closeMapListShareModal()">×</button></div>'+
+      '<div class="msg show" style="margin-top:12px">1. Compartilhe o layout. Depois volte aqui e envie a lista no WhatsApp.</div>'+
+      '<div class="modal-actions" style="display:grid;gap:10px">'+
+        '<button class="btn btn-primary" onclick="sharePreparedMap()">1. Compartilhar layout</button>'+
+        '<button class="btn btn-primary" onclick="sharePreparedListWhatsApp()">2. Enviar lista no WhatsApp</button>'+
+        '<button class="btn" onclick="closeMapListShareModal()">Fechar</button>'+
+      '</div>'+
+    '</div>';
+  document.body.appendChild(wrap);
+}
+function sharePreparedMap(){
+  if(!pendingShareMapFile)return;
+  try{
+    if(navigator.share&&navigator.canShare&&navigator.canShare({files:[pendingShareMapFile]})){
+      navigator.share({title:'Meu Assento - Layout',files:[pendingShareMapFile]}).catch(function(e){
+        if(e&&e.name!=='AbortError')console.error(e);
+      });
+      return;
+    }
+  }catch(e){console.error(e)}
+  if(pendingShareMapBlobUrl){
+    var a=document.createElement('a');
+    a.href=pendingShareMapBlobUrl;
+    a.download='meu-assento-mapa.png';
+    a.click();
+  }
+}
+function sharePreparedListWhatsApp(){
+  if(!pendingShareListText)return;
+  copyShareTextFallback(pendingShareListText);
+  window.open('https://wa.me/?text='+encodeURIComponent(pendingShareListText),'_blank','noopener');
 }
 function shareMapAndList(){
   var target=document.getElementById('mapCard');
@@ -1300,55 +1341,19 @@ function shareMapAndList(){
     return new Promise(function(resolve){canvas.toBlob(function(blob){resolve(blob)},'image/png')});
   }).then(function(blob){
     if(!blob)return;
-    var file=new File([blob],'meu-assento-mapa.png',{type:'image/png'});
-    var text=buildReservationShareText();
-
-    if(isIOSShareEnvironment()){
-      loading(false);
-      copyShareTextFallback(text);
-      var wa=window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank','noopener');
-      setTimeout(function(){
-        try{
-          if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
-            navigator.share({title:'Meu Assento - Layout',files:[file]}).catch(function(e){
-              if(e&&e.name!=='AbortError')console.error(e);
-            });
-          }else{
-            var a=document.createElement('a');
-            a.href=URL.createObjectURL(blob);
-            a.download='meu-assento-mapa.png';
-            a.click();
-            setTimeout(function(){URL.revokeObjectURL(a.href)},1000);
-          }
-        }catch(e){console.error(e)}
-      },350);
-      showShareToast('A lista foi aberta no WhatsApp como texto. Em seguida, compartilhe o layout e anexe-o à mesma conversa.');
-      return;
-    }
-
-    return copyShareTextFallback(text).then(function(copied){
-      if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
-        loading(false);
-        return navigator.share({title:'Meu Assento',text:text,files:[file]}).then(function(){
-          showShareToast(copied
-            ? 'Layout enviado. A lista está copiada: se o WhatsApp não mostrar o texto, toque no campo da mensagem e escolha Colar.'
-            : 'Layout enviado.');
-        });
-      }
-      loading(false);
-      window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank','noopener');
-      var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='meu-assento-mapa.png';a.click();setTimeout(function(){URL.revokeObjectURL(a.href)},1000);
-      showShareToast(copied
-        ? 'A lista foi aberta no WhatsApp e também copiada. Anexe o PNG na mesma conversa.'
-        : 'A lista foi aberta no WhatsApp e o mapa foi salvo em PNG para anexar.');
-    });
+    closeMapListShareModal();
+    pendingShareMapFile=new File([blob],'meu-assento-mapa.png',{type:'image/png'});
+    pendingShareMapBlobUrl=URL.createObjectURL(blob);
+    pendingShareListText=buildReservationShareText();
+    copyShareTextFallback(pendingShareListText);
+    loading(false);
+    ensureMapListShareModal();
   }).catch(function(e){
-    if(e&&e.name==='AbortError')return;
     console.error(e);
+    loading(false);
   }).finally(function(){
     var capture=document.getElementById('mapCardShareCapture');
     if(capture)capture.remove();
-    loading(false);
   });
 }
 function shareMapImage(){
