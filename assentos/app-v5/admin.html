@@ -1273,6 +1273,12 @@ function showShareToast(text){
   document.body.appendChild(el);
   setTimeout(function(){if(el&&el.parentNode)el.remove()},5500);
 }
+function isIOSShareEnvironment(){
+  var ua=navigator.userAgent||'';
+  var ios=/iPad|iPhone|iPod/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  var standalone=window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches;
+  return !!(ios||standalone);
+}
 function shareMapAndList(){
   var target=document.getElementById('mapCard');
   if(!target||typeof html2canvas!=='function')return;
@@ -1296,20 +1302,44 @@ function shareMapAndList(){
     if(!blob)return;
     var file=new File([blob],'meu-assento-mapa.png',{type:'image/png'});
     var text=buildReservationShareText();
+
+    if(isIOSShareEnvironment()){
+      loading(false);
+      copyShareTextFallback(text);
+      var wa=window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank','noopener');
+      setTimeout(function(){
+        try{
+          if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+            navigator.share({title:'Meu Assento - Layout',files:[file]}).catch(function(e){
+              if(e&&e.name!=='AbortError')console.error(e);
+            });
+          }else{
+            var a=document.createElement('a');
+            a.href=URL.createObjectURL(blob);
+            a.download='meu-assento-mapa.png';
+            a.click();
+            setTimeout(function(){URL.revokeObjectURL(a.href)},1000);
+          }
+        }catch(e){console.error(e)}
+      },350);
+      showShareToast('A lista foi aberta no WhatsApp como texto. Em seguida, compartilhe o layout e anexe-o à mesma conversa.');
+      return;
+    }
+
     return copyShareTextFallback(text).then(function(copied){
       if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
         loading(false);
         return navigator.share({title:'Meu Assento',text:text,files:[file]}).then(function(){
           showShareToast(copied
             ? 'Layout enviado. A lista está copiada: se o WhatsApp não mostrar o texto, toque no campo da mensagem e escolha Colar.'
-            : 'Layout enviado. Se o WhatsApp não mostrar a lista, volte e use o botão de compartilhar novamente.');
+            : 'Layout enviado.');
         });
       }
       loading(false);
       window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank','noopener');
       var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='meu-assento-mapa.png';a.click();setTimeout(function(){URL.revokeObjectURL(a.href)},1000);
       showShareToast(copied
-        ? 'A lista foi aberta no WhatsApp e também copiada. Anexe o PNG e, se necessário, cole o texto.'
+        ? 'A lista foi aberta no WhatsApp e também copiada. Anexe o PNG na mesma conversa.'
         : 'A lista foi aberta no WhatsApp e o mapa foi salvo em PNG para anexar.');
     });
   }).catch(function(e){
@@ -1321,7 +1351,6 @@ function shareMapAndList(){
     loading(false);
   });
 }
-
 function shareMapImage(){
   var target=document.getElementById('mapCard');
   if(!target||typeof html2canvas!=='function'){return}
