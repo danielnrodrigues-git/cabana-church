@@ -1232,14 +1232,6 @@ function shareReservationListWhatsApp(){
   if(!currentService)return;
   window.open('https://wa.me/?text='+encodeURIComponent(buildReservationShareText()),'_blank','noopener');
 }
-function copyShareTextFallback(text){
-  try{
-    if(navigator.clipboard&&navigator.clipboard.writeText){
-      return navigator.clipboard.writeText(text).then(function(){return true}).catch(function(){return legacyCopyShareText(text)});
-    }
-  }catch(e){}
-  return Promise.resolve(legacyCopyShareText(text));
-}
 function legacyCopyShareText(text){
   try{
     var ta=document.createElement('textarea');
@@ -1248,6 +1240,38 @@ function legacyCopyShareText(text){
     document.body.appendChild(ta);ta.focus();ta.select();
     var ok=document.execCommand('copy');document.body.removeChild(ta);return !!ok;
   }catch(e){return false}
+}
+function copyShareTextFallback(text){
+  var legacyOk=legacyCopyShareText(text);
+  if(legacyOk)return Promise.resolve(true);
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      return navigator.clipboard.writeText(text).then(function(){return true}).catch(function(){return false});
+    }
+  }catch(e){}
+  return Promise.resolve(false);
+}
+function showShareToast(text){
+  var old=document.getElementById('shareToast');
+  if(old)old.remove();
+  var el=document.createElement('div');
+  el.id='shareToast';
+  el.textContent=text;
+  el.style.position='fixed';
+  el.style.left='16px';
+  el.style.right='16px';
+  el.style.bottom='24px';
+  el.style.zIndex='99999';
+  el.style.background='#102033';
+  el.style.color='#fff';
+  el.style.padding='13px 15px';
+  el.style.borderRadius='14px';
+  el.style.fontWeight='700';
+  el.style.fontSize='14px';
+  el.style.lineHeight='1.35';
+  el.style.boxShadow='0 8px 28px rgba(0,0,0,.25)';
+  document.body.appendChild(el);
+  setTimeout(function(){if(el&&el.parentNode)el.remove()},5500);
 }
 function shareMapAndList(){
   var target=document.getElementById('mapCard');
@@ -1274,15 +1298,19 @@ function shareMapAndList(){
     var text=buildReservationShareText();
     return copyShareTextFallback(text).then(function(copied){
       if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+        loading(false);
         return navigator.share({title:'Meu Assento',text:text,files:[file]}).then(function(){
-          if(copied){
-            return systemConfirm('Layout compartilhado. A lista também foi copiada para a área de transferência. Se o WhatsApp deste aparelho não inserir o texto automaticamente, basta colar a lista na mensagem.',{title:'Layout + lista',okText:'OK',cancelText:'Fechar'});
-          }
+          showShareToast(copied
+            ? 'Layout enviado. A lista está copiada: se o WhatsApp não mostrar o texto, toque no campo da mensagem e escolha Colar.'
+            : 'Layout enviado. Se o WhatsApp não mostrar a lista, volte e use o botão de compartilhar novamente.');
         });
       }
+      loading(false);
       window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank','noopener');
       var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='meu-assento-mapa.png';a.click();setTimeout(function(){URL.revokeObjectURL(a.href)},1000);
-      return systemConfirm(copied?'Abri a lista no WhatsApp, salvei o mapa em PNG e também copiei a lista. Anexe o mapa e, se necessário, cole o texto na mesma conversa.':'Abri a lista no WhatsApp e salvei o mapa em PNG para anexar na mesma conversa.',{title:'Compartilhamento preparado',okText:'OK',cancelText:'Fechar'});
+      showShareToast(copied
+        ? 'A lista foi aberta no WhatsApp e também copiada. Anexe o PNG e, se necessário, cole o texto.'
+        : 'A lista foi aberta no WhatsApp e o mapa foi salvo em PNG para anexar.');
     });
   }).catch(function(e){
     if(e&&e.name==='AbortError')return;
